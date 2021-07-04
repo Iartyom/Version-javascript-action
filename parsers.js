@@ -1,27 +1,27 @@
 const constants = require('./constants')
 
-function parsePullRequestBody(pull_request_body) {
-  console.log(`pull_request_body=${ pull_request_body }`);
+function parsePullRequestBody(pullRequest_body) {
+  console.log(`pullRequest_body=${ pullRequest_body }`);
 
   const result = {
     descriptions: [],
     mondays: []
   };
 
-  pull_request_body = pull_request_body.replace(constants.COMMENT_REGEX, "");
-  console.log(`pull_request_body=${ JSON.stringify(pull_request_body, null, 2) }`);
+  pullRequest_body = pullRequest_body.replace(constants.COMMENT_REGEX, "");
+  console.log(`pullRequest_body=${ JSON.stringify(pullRequest_body) }`);
 
-  const description_lines_after_regex = constants.PR_DESCRIPTION_LINES_REGEX.exec(pull_request_body);
+  const descriptionLines_afterRegex = constants.PR_DESCRIPTION_LINES_REGEX.exec(pullRequest_body);
 
-  if (description_lines_after_regex != null && description_lines_after_regex.length != null) {
-    for (let description_lines_index = 0; 
-      description_lines_index < description_lines_after_regex.length;
-      description_lines_index+=3) {
-      const type = description_lines_after_regex[description_lines_index + 1];
-      const description = description_lines_after_regex[description_lines_index + 2];
+  if (descriptionLines_afterRegex != null && descriptionLines_afterRegex.length != null) {
+    for (let descriptionLines_index = 0; 
+      descriptionLines_index < descriptionLines_afterRegex.length;
+      descriptionLines_index+=3) {
+      const type = descriptionLines_afterRegex[descriptionLines_index + 1];
+      const description = descriptionLines_afterRegex[descriptionLines_index + 2];
 
-      console.log(`type=${ JSON.stringify(type, null, 2) }`);
-      console.log(`description=${ JSON.stringify(description, null, 2) }`);
+      console.log(`type=${ JSON.stringify(type) }`);
+      console.log(`description=${ JSON.stringify(description) }`);
 
       result.descriptions.push(
         {
@@ -30,19 +30,19 @@ function parsePullRequestBody(pull_request_body) {
         });
     }
 
-    const monday_links = pull_request_body.match(constants.PR_MONDAY_LINKS_REGEX);
-    console.log(`monday_links=${ JSON.stringify(monday_links, null, 2) }`);
-    if (monday_links!=null) {
-      for (const monday_link of monday_links) {
-        console.log(`monday_link=${ JSON.stringify(monday_link, null, 2) }`);
-        result.mondays.push(monday_link);
+    const mondayLinks = pullRequest_body.match(constants.PR_MONDAY_LINKS_REGEX);
+    console.log(`mondayLinks=${ JSON.stringify(mondayLinks) }`);
+    if (mondayLinks!=null) {
+      for (const mondayLink of mondayLinks) {
+        console.log(`mondayLink=${ JSON.stringify(mondayLink) }`);
+        result.mondays.push(mondayLink);
       }
     }
   } else {
     return null;
   }
 
-  console.log(`result=${ JSON.stringify(result, null, 2) }`);
+  console.log(`result=${ JSON.stringify(result) }`);
   return result;
 }
 
@@ -50,7 +50,7 @@ function parseVersion(version) {
   const results = version.match(constants.VERSION_REGEX);
   if (results!=null) {
     const version = results[0];
-    console.log(`results=${ JSON.stringify(results, null, 2) }`);
+    console.log(`results=${ JSON.stringify(results) }`);
     console.log(`version=${ version }`);
     const major = parseInt(results[1]);
     const minor = parseInt(results[2]);
@@ -63,9 +63,9 @@ function parseVersion(version) {
 }
 
 function parseVersionFromTag(tag) {
-  const tag_name = tag.name.toString();
+  const tagName = tag.name.toString();
 
-  return parseVersion(tag_name);
+  return parseVersion(tagName);
 }
 
 module.exports = {

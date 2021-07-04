@@ -1,66 +1,89 @@
 const constants = require('./constants');
-const monday_api_wrapper = require('./monday_api_wrapper');
-const monday_constants = require('./monday_constants');
 const tokens = require('../tokens/tokens');
-const octokit_api_wrapper = require('./octokit_api_wrapper');
+const octokitApiWrapper = require('./octokit-api-wrapper');
 const parsers = require('./parsers');
 const utilities = require('./utilities');
 
 const github = require('@actions/github');
 
+
 console.log(`constants.REPOSITORY=${ constants.REPOSITORY }`);
 
-const splitted_repository = constants.REPOSITORY.toString().split("/");
-const OWNER = splitted_repository[0];
-const REPO = splitted_repository[1];
-console.log(`splitted_repository=${ JSON.stringify(splitted_repository, null, 2) }`);
+const splittedRepository = constants.REPOSITORY.toString().split("/");
+const OWNER = splittedRepository[0];
+const REPO = splittedRepository[1];
+console.log(`splittedRepository=${ JSON.stringify(splittedRepository) }`);
 console.log(`OWNER=${ OWNER }`);
 console.log(`REPO=${ REPO }`);
 
 test('test getOctokit', async () => {
-  let reader = new FileReader();
   const token = tokens.GITHUB_TOKEN;
+  
   const octokit = github.getOctokit(token);
 
-  const branch = await octokit_api_wrapper.getBranch(octokit, OWNER, REPO, constants.BRANCH);
+  const branch = await octokitApiWrapper.getBranch(octokit, OWNER, REPO, constants.BRANCH);
 
-  const last_commit_message = branch.commit.commit.message;
-  const latest_branch_commit_sha = branch.commit.sha;
-  console.log(`last_commit_message=${ last_commit_message }`);
-  console.log(`latest_branch_commit_sha=${ latest_branch_commit_sha }`);
+  const lastCommitMessage = branch.commit.commit.message;
+  const latestBranchCommitSHA = branch.commit.sha;
+  console.log(`lastCommitMessage=${ lastCommitMessage }`);
+  console.log(`latestBranchCommitSHA=${ latestBranchCommitSHA }`);
 
-  const step = utilities.commit_message_to_step(last_commit_message);
+  const step = utilities.commitMessageToStep(lastCommitMessage);
   console.log(`step=${ step }`)
 
-  const before_tags = await octokit_api_wrapper.getTags(octokit, OWNER, REPO);
-  console.log(`before_tags=${ JSON.stringify(before_tags, null, 2) }`);
+  var beforeTags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
+  console.log(`beforeTags=${ JSON.stringify(beforeTags) }`);
 
-  var prev_version = constants.INIT_VERSION;
+  const filteredBeforeTags = beforeTags.filter(tag => {
+    console.log(`tag=${ JSON.stringify(tag) }`);
+    console.log(`tag.name=${ JSON.stringify(tag.name) }`);
+    const tagAfterVersionRegexExec = constants.VERSION_REGEX.exec(tag.name);
+    console.log(`tagAfterVersionRegexExec=${ JSON.stringify(tagAfterVersionRegexExec) }`);
+    if (tagAfterVersionRegexExec != null && tagAfterVersionRegexExec.length != null) {
+      return true;
+    }
+    return false;
+  });
+  console.log(`filteredBeforeTags=${ JSON.stringify(filteredBeforeTags) }`);
+
+  var prevVersion = constants.INIT_VERSION;
   var major, minor, patch;
-  [prev_version, major, minor, patch] = parsers.parseVersion(prev_version);
+  [prevVersion, major, minor, patch] = parsers.parseVersion(prevVersion);
   
-  if (before_tags != null && before_tags.length > 0) {
-    const before_latest_tag = before_tags[0];
+  if (filteredBeforeTags != null && filteredBeforeTags.length > 0) {
+    const beforeLatestTag = beforeTags[0];
     
-    const parsed_tag = parsers.parseVersionFromTag(before_latest_tag);
+    const parsedTag = parsers.parseVersionFromTag(beforeLatestTag);
 
-    if (parsed_tag!=null) {
-      [prev_version, major, minor, patch] = parsed_tag;
+    if (parsedTag!=null) {
+      [prevVersion, major, minor, patch] = parsedTag;
     }
   }
   console.log(`major=${ major }, minor=${ minor }, patch=${ patch }`);
-  console.log(`prev_version=${ prev_version }`);
+  console.log(`prevVersion=${ prevVersion }`);
 
-  const next_version = utilities.nextVersion(major, minor, patch, step);
-  console.log(`next_version=${ JSON.stringify(next_version, null, 2) }`);
+  const nextVersion = utilities.nextVersion(major, minor, patch, step);
+  console.log(`nextVersion=${ JSON.stringify(nextVersion) }`);
 
-  await octokit_api_wrapper.createTag(octokit, OWNER, REPO, next_version, "", latest_branch_commit_sha, "commit")
-  await octokit_api_wrapper.createRef(octokit, OWNER, REPO, `refs/tags/${ next_version }`, latest_branch_commit_sha);
+  await octokitApiWrapper.createTag(octokit, OWNER, REPO, nextVersion, "", latestBranchCommitSHA, "commit")
+  await octokitApiWrapper.createRef(octokit, OWNER, REPO, `refs/tags/${ nextVersion }`, latestBranchCommitSHA);
 
-  const after_tags = await octokit_api_wrapper.getTags(octokit, OWNER, REPO);
-  after_tags.forEach(tag => {
+  const afterTags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
+  afterTags.forEach(tag => {
     console.log(`tag.name=${ tag.name }`);
   });
+
+  const filteredAfterTags = afterTags.filter(tag => {
+    console.log(`tag=${ JSON.stringify(tag) }`);
+    console.log(`tag.name=${ JSON.stringify(tag.name) }`);
+    const tagAfterVersionRegexExec = constants.VERSION_REGEX.exec(tag.name);
+    console.log(`tagAfterVersionRegexExec=${ JSON.stringify(tagAfterVersionRegexExec) }`);
+    if (tagAfterVersionRegexExec != null && tagAfterVersionRegexExec.length != null) {
+      return true;
+    }
+    return false;
+  });
+  console.log(`filteredAfterTags=${ JSON.stringify(filteredAfterTags) }`);
 
   // await deleteTags(octokit, OWNER, REPO);
   // await deleteSliceOfTags(octokit, OWNER, REPO, 1, -1);
@@ -72,70 +95,75 @@ test('test pull request parser', async () => {
   const token = tokens.GITHUB_TOKEN;;
   const octokit = github.getOctokit(token);
 
-  const branch = await octokit_api_wrapper.getBranch(octokit, OWNER, REPO, constants.BRANCH);
+  const branch = await octokitApiWrapper.getBranch(octokit, OWNER, REPO, constants.BRANCH);
 
-  const tags = await octokit_api_wrapper.getTags(octokit, OWNER, REPO);
-  console.log(`tags=${ JSON.stringify(tags, null, 2) }`);
+  const tags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
+  console.log(`tags=${ JSON.stringify(tags) }`);
 
-  const tags_array = Array.from(tags);
-  const latests_tag = tags_array[0];
-  const next_to_latests_tag = tags_array[1];
-  const latests_tag_commit_sha = latests_tag.commit.sha;
-  const next_to_latests_tag_commit_sha = next_to_latests_tag.commit.sha;
-
-  console.log(`latests_tag=${ JSON.stringify(latests_tag, null, 2) }`);
-  console.log(`next_to_latests_tag=${ JSON.stringify(next_to_latests_tag, null, 2) }`);
-
-  console.log(`latests_tag_commit_sha=${ latests_tag_commit_sha }`);
-  console.log(`next_to_latests_tag_commit_sha=${ next_to_latests_tag_commit_sha }`);
-
-  const compare = await utilities.compareCommits(octokit, OWNER, REPO, next_to_latests_tag_commit_sha, latests_tag_commit_sha);
-  console.log(`compare=${ JSON.stringify(compare, null, 2) }`);
-
-  const relevant_pull_requests_set = new Set();
-  
-  for (const commit_from_compare of compare.commits) {
-    console.log(`commit_from_compare=${ JSON.stringify(commit_from_compare, null, 2) }`);
-
-    const commit_from_compare_sha = commit_from_compare.sha;
-
-    const list_pull_requests_associated_with_commit_from_compare = await octokit_api_wrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commit_from_compare_sha);
-    console.log(`list_pull_requests_associated_with_commit_from_compare=${ JSON.stringify(list_pull_requests_associated_with_commit_from_compare, null, 2) }`);
-
-    for (const pull_requests_associated_with_commit_from_compare of list_pull_requests_associated_with_commit_from_compare) {
-
-      const pull_request_number = pull_requests_associated_with_commit_from_compare.number;
-      console.log(`pull_request_number=${ JSON.stringify(pull_request_number, null, 2) }`);
-
-      const pull_request_body = pull_requests_associated_with_commit_from_compare.body;
-      console.log(`pull_request_body=${ JSON.stringify(pull_request_body, null, 2) }`);
-
-      const parsed_pull_request_body = parsers.parsePullRequestBody(pull_request_body);
-
-      if (parsed_pull_request_body != null) {
-        const json_object = JSON.stringify({ 
-          number: pull_request_number,
-          body: pull_request_body,
-          parsed_pull_request: parsed_pull_request_body
-        });
-        console.log(`json_object=${ json_object }`);
+  const tagsArray = Array.from(tags);
+  const afterTagsArray = Array.from(tagsArray);
     
-        relevant_pull_requests_set.add(json_object);
+  if (afterTagsArray.length > 1) {
+    const latestsTag = afterTagsArray[0];
+    const latestsTagCommitSHA = latestsTag.commit.sha;
+
+    const nextToLatestsTag = afterTagsArray[1];
+    const nextToLatestsTagCommitSHA = nextToLatestsTag.commit.sha;
+
+    console.log(`latestsTag=${ JSON.stringify(latestsTag) }`);
+    console.log(`nextToLatestsTag=${ JSON.stringify(nextToLatestsTag) }`);
+
+    console.log(`latestsTagCommitSHA=${ latestsTagCommitSHA }`);
+    console.log(`nextToLatestsTagCommitSHA=${ nextToLatestsTagCommitSHA }`);
+
+    const compare = await utilities.compareCommits(octokit, OWNER, REPO, nextToLatestsTagCommitSHA, latestsTagCommitSHA);
+    console.log(`compare=${ JSON.stringify(compare) }`);
+
+    const relevantPullRequestsSet = new Set();
+  
+    for (const commitFromCompare of compare.commits) {
+      console.log(`commitFromCompare=${ JSON.stringify(commitFromCompare) }`);
+
+      const commitFromCompareSHA = commitFromCompare.sha;
+
+      const listPullRequestsAssociatedWithCommitFromCompare = await octokitApiWrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commitFromCompareSHA);
+      console.log(`listPullRequestsAssociatedWithCommitFromCompare=${ JSON.stringify(listPullRequestsAssociatedWithCommitFromCompare) }`);
+
+      for (const pullRequestsAssociatedWithCommitFromCompare of listPullRequestsAssociatedWithCommitFromCompare) {
+
+        const pullRequestNumber = pullRequestsAssociatedWithCommitFromCompare.number;
+        console.log(`pullRequestNumber=${ JSON.stringify(pullRequestNumber) }`);
+
+        const pullRequestBody = pullRequestsAssociatedWithCommitFromCompare.body;
+        console.log(`pullRequestBody=${ JSON.stringify(pullRequestBody) }`);
+
+        const parsedPullRequestBody = parsers.parsePullRequestBody(pullRequestBody);
+
+        if (parsedPullRequestBody != null) {
+          const jsonObject = JSON.stringify({ 
+            number: pullRequestNumber,
+            body: pullRequestBody,
+            parsedPullRequest: parsedPullRequestBody
+          });
+          console.log(`jsonObject=${ jsonObject }`);
+    
+          relevantPullRequestsSet.add(jsonObject);
+        }
       }
     }
-  }
 
-  console.log(`[...relevant_pull_requests_set]=${ JSON.stringify([...relevant_pull_requests_set], null, 2) }`);
-  console.log(`[...relevant_pull_requests_set.keys()]=${ JSON.stringify([...relevant_pull_requests_set.keys()], null, 2) }`);
-  console.log(`[...relevant_pull_requests_set.values()]=${ JSON.stringify([...relevant_pull_requests_set.values()], null, 2) }`);
+    console.log(`[...relevantPullRequestsSet]=${ JSON.stringify([...relevantPullRequestsSet]) }`);
+    console.log(`[...relevantPullRequestsSet.keys()]=${ JSON.stringify([...relevantPullRequestsSet.keys()]) }`);
+    console.log(`[...relevantPullRequestsSet.values()]=${ JSON.stringify([...relevantPullRequestsSet.values()]) }`);
   
-  const date = utilities.getFormattedDate();
-  console.log(`date=${ date }`);
+    const date = utilities.getFormattedDate();
+    console.log(`date=${ date }`);
 
-  const changelog = utilities.generateChangeLog(relevant_pull_requests_set, "0.0.1", date);
-  console.log(`changelog=${ JSON.stringify(changelog, null, 2) }`);
+    const changelog = utilities.generateChangeLog(relevantPullRequestsSet, "0.0.1", date);
+    console.log(`changelog=${ JSON.stringify(changelog) }`);
 
-  await utilities.updateMonday(relevant_pull_requests_set, "0.0.1");
+    await utilities.updateMonday(relevantPullRequestsSet, "0.0.1");
+  }
 })
 
 

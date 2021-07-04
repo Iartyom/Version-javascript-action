@@ -41,9 +41,9 @@ module.exports = { INIT_VERSION,
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const constants = __nccwpck_require__(1629);
-const monday_api_wrapper = __nccwpck_require__(7513);
+const mondayApi_wrapper = __nccwpck_require__(7513);
 const monday_constants = __nccwpck_require__(5471);
-const octokit_api_wrapper = __nccwpck_require__(1513);
+const octokitApiWrapper = __nccwpck_require__(1513);
 const parsers = __nccwpck_require__(1540);
 const utilities = __nccwpck_require__(223);
 
@@ -61,114 +61,114 @@ async function run() {
     core.info(`TOKEN=${ TOKEN }`);
     core.info(`BRANCH=${ BRANCH }`);
     
-    const splitted_repository = REPOSITORY.toString().split("/");
-    const OWNER = splitted_repository[0];
-    const REPO = splitted_repository[1];
+    const splittedRepository = REPOSITORY.toString().split("/");
+    const OWNER = splittedRepository[0];
+    const REPO = splittedRepository[1];
     
-    core.info(`splitted_repository=${ JSON.stringify(splitted_repository) }`);
+    core.info(`splittedRepository=${ JSON.stringify(splittedRepository) }`);
     core.info(`OWNER=${ OWNER }`);
     core.info(`REPO=${ REPO }`);
 
     const octokit = github.getOctokit(TOKEN);
 
-    const branch = await octokit_api_wrapper.getBranch(octokit, OWNER, REPO, BRANCH);
+    const branch = await octokitApiWrapper.getBranch(octokit, OWNER, REPO, BRANCH);
 
-    const last_commit_message = branch.commit.commit.message;
-    const latest_branch_commit_sha = branch.commit.sha;
-    core.info(`last_commit_message=${ last_commit_message }`);
-    core.info(`latest_branch_commit_sha=${ latest_branch_commit_sha }`);
+    const lastCommitMessage = branch.commit.commit.message;
+    const latestBranchCommitSHA = branch.commit.sha;
+    core.info(`lastCommitMessage=${ lastCommitMessage }`);
+    core.info(`latestBranchCommitSHA=${ latestBranchCommitSHA }`);
 
-    const step = utilities.commit_message_to_step(last_commit_message);
+    const step = utilities.commitMessageToStep(lastCommitMessage);
     core.info(`step=${ step }`)
 
-    const before_tags = await octokit_api_wrapper.getTags(octokit, OWNER, REPO);
-    core.info(`before_tags=${ JSON.stringify(before_tags) }`);
+    const beforeTags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
+    core.info(`beforeTags=${ JSON.stringify(beforeTags) }`);
 
-    var prev_version = constants.INIT_VERSION;
+    var prevVersion = constants.INIT_VERSION;
     var major, minor, patch;
-    [prev_version, major, minor, patch] = parsers.parseVersion(prev_version);
+    [prevVersion, major, minor, patch] = parsers.parseVersion(prevVersion);
   
-    if (before_tags != null && before_tags.length > 0) {
-      const before_latest_tag = before_tags[0];
-      const parsed_tag = parsers.parseVersionFromTag(before_latest_tag);
+    if (beforeTags != null && beforeTags.length > 0) {
+      const beforeLatestTag = beforeTags[0];
+      const parsedTag = parsers.parseVersionFromTag(beforeLatestTag);
 
-      if (parsed_tag!=null) {
-        [prev_version, major, minor, patch] = parsed_tag;
+      if (parsedTag!=null) {
+        [prevVersion, major, minor, patch] = parsedTag;
       }
     }
     core.info(`major=${ major }, minor=${ minor }, patch=${ patch }`);
-    core.info(`prev_version=${ prev_version }`);
+    core.info(`prevVersion=${ prevVersion }`);
 
-    const next_version = utilities.nextVersion(major, minor, patch, step);
-    console.log(`next_version=${ JSON.stringify(next_version, null, 2) }`);
+    const nextVersion = utilities.nextVersion(major, minor, patch, step);
+    console.log(`nextVersion=${ JSON.stringify(nextVersion) }`);
 
-    await octokit_api_wrapper.createTag(octokit, OWNER, REPO, next_version, "", latest_branch_commit_sha, "commit")
-    await octokit_api_wrapper.createRef(octokit, OWNER, REPO, `refs/tags/${ next_version }`, latest_branch_commit_sha);
+    await octokitApiWrapper.createTag(octokit, OWNER, REPO, nextVersion, "", latestBranchCommitSHA, "commit")
+    await octokitApiWrapper.createRef(octokit, OWNER, REPO, `refs/tags/${ nextVersion }`, latestBranchCommitSHA);
 
-    const after_tags = await octokit_api_wrapper.getTags(octokit, OWNER, REPO);
-    after_tags.forEach(tag => {
+    const afterTags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
+    afterTags.forEach(tag => {
       core.info(`tag.name=${ tag.name }`);
     });
   
-    const after_tags_array = Array.from(after_tags);
-    const latests_tag = after_tags_array[0];
-    const next_to_latests_tag = after_tags_array[1];
-    const latests_tag_commit_sha = latests_tag.commit.sha;
-    const next_to_latests_tag_commit_sha = next_to_latests_tag.commit.sha;
+    const afterTagsArray = Array.from(afterTags);
+    const latestsTag = afterTagsArray[0];
+    const nextToLatestsTag = afterTagsArray[1];
+    const latestsTagCommitSHA = latestsTag.commit.sha;
+    const nextToLatestsTagCommitSHA = nextToLatestsTag.commit.sha;
 
-    core.info(`latests_tag=${ JSON.stringify(latests_tag, null, 2) }`);
-    core.info(`next_to_latests_tag=${ JSON.stringify(next_to_latests_tag, null, 2) }`);
+    core.info(`latestsTag=${ JSON.stringify(latestsTag) }`);
+    core.info(`nextToLatestsTag=${ JSON.stringify(nextToLatestsTag) }`);
 
-    core.info(`latests_tag_commit_sha=${ latests_tag_commit_sha }`);
-    core.info(`next_to_latests_tag_commit_sha=${ next_to_latests_tag_commit_sha }`);
+    core.info(`latestsTagCommitSHA=${ latestsTagCommitSHA }`);
+    core.info(`nextToLatestsTagCommitSHA=${ nextToLatestsTagCommitSHA }`);
 
-    const compare = await utilities.compareCommits(octokit, OWNER, REPO, next_to_latests_tag_commit_sha, latests_tag_commit_sha);
-    core.info(`compare=${ JSON.stringify(compare, null, 2) }`);
+    const compare = await utilities.compareCommits(octokit, OWNER, REPO, nextToLatestsTagCommitSHA, latestsTagCommitSHA);
+    core.info(`compare=${ JSON.stringify(compare) }`);
 
-    const relevant_pull_requests_set = new Set();
+    const relevantPullRequestsSet = new Set();
   
-    for (const commit_from_compare of compare.commits) {
-      core.info(`commit_from_compare=${ JSON.stringify(commit_from_compare, null, 2) }`);
+    for (const commitFromCompare of compare.commits) {
+      core.info(`commitFromCompare=${ JSON.stringify(commitFromCompare) }`);
 
-      const commit_from_compare_sha = commit_from_compare.sha;
+      const commitFromCompareSHA = commitFromCompare.sha;
 
-      const list_pull_requests_associated_with_commit_from_compare = await octokit_api_wrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commit_from_compare_sha);
-      core.info(`list_pull_requests_associated_with_commit_from_compare=${ JSON.stringify(list_pull_requests_associated_with_commit_from_compare, null, 2) }`);
+      const listPullRequestsAssociatedWithCommitFromCompare = await octokitApiWrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commitFromCompareSHA);
+      core.info(`listPullRequestsAssociatedWithCommitFromCompare=${ JSON.stringify(listPullRequestsAssociatedWithCommitFromCompare) }`);
 
-      for (const pull_requests_associated_with_commit_from_compare of list_pull_requests_associated_with_commit_from_compare) {
+      for (const pullRequestsAssociatedWithCommitFromCompare of listPullRequestsAssociatedWithCommitFromCompare) {
 
-        const pull_request_number = pull_requests_associated_with_commit_from_compare.number;
-        core.info(`pull_request_number=${ JSON.stringify(pull_request_number, null, 2) }`);
+        const pullRequestNumber = pullRequestsAssociatedWithCommitFromCompare.number;
+        core.info(`pullRequestNumber=${ JSON.stringify(pullRequestNumber) }`);
 
-        const pull_request_body = pull_requests_associated_with_commit_from_compare.body;
-        core.info(`pull_request_body=${ JSON.stringify(pull_request_body, null, 2) }`);
+        const pullRequest_body = pullRequestsAssociatedWithCommitFromCompare.body;
+        core.info(`pullRequest_body=${ JSON.stringify(pullRequest_body) }`);
 
-        const parsed_pull_request_body = parsers.parsePullRequestBody(pull_request_body);
+        const parsedPull_requestBody = parsers.parsePullRequestBody(pullRequest_body);
 
-        if (parsed_pull_request_body != null) {
-          const json_object = JSON.stringify({ 
-            number: pull_request_number,
-            body: pull_request_body,
-            parsed_pull_request: parsed_pull_request_body
+        if (parsedPull_requestBody != null) {
+          const jsonObject = JSON.stringify({ 
+            number: pullRequestNumber,
+            body: pullRequest_body,
+            parsedPull_request: parsedPull_requestBody
           });
-          core.info(`json_object=${ json_object }`);
+          core.info(`jsonObject=${ jsonObject }`);
     
-          relevant_pull_requests_set.add(json_object);
+          relevantPullRequestsSet.add(jsonObject);
         }
       }
     }
 
-    core.info(`[...relevant_pull_requests_set]=${ JSON.stringify([...relevant_pull_requests_set], null, 2) }`);
-    core.info(`[...relevant_pull_requests_set.keys()]=${ JSON.stringify([...relevant_pull_requests_set.keys()], null, 2) }`);
-    core.info(`[...relevant_pull_requests_set.values()]=${ JSON.stringify([...relevant_pull_requests_set.values()], null, 2) }`);
+    core.info(`[...relevantPullRequestsSet]=${ JSON.stringify([...relevantPullRequestsSet]) }`);
+    core.info(`[...relevantPullRequestsSet.keys()]=${ JSON.stringify([...relevantPullRequestsSet.keys()]) }`);
+    core.info(`[...relevantPullRequestsSet.values()]=${ JSON.stringify([...relevantPullRequestsSet.values()]) }`);
   
     const date = utilities.getFormattedDate();
     core.info(`date=${ date }`);
 
-    const changelog = utilities.generateChangeLog(relevant_pull_requests_set, next_version, date);
-    core.info(`changelog=${ JSON.stringify(changelog, null, 2) }`);
+    const changelog = utilities.generateChangeLog(relevantPullRequestsSet, nextVersion, date);
+    core.info(`changelog=${ JSON.stringify(changelog) }`);
 
-    await utilities.updateMonday(relevant_pull_requests_set, next_version);
+    await utilities.updateMonday(relevantPullRequestsSet, nextVersion);
   } catch (error) {
     core.setFailed(error.message);
   }
@@ -182,12 +182,12 @@ run();
 /***/ 4360:
 /***/ ((module) => {
 
-function getColumnFieldsQuery(board_id) {
-  console.log(`board_id=${ board_id }`);
+function getColumnFieldsQuery(boardID) {
+  console.log(`boardID=${ boardID }`);
 
-  const column_fields_query = ` \
+  const columnFields_query = ` \
     query { \
-      boards (ids: ${ board_id }) { \
+      boards (ids: ${ boardID }) { \
         columns { \
           title \
           type \
@@ -195,16 +195,16 @@ function getColumnFieldsQuery(board_id) {
       } \
     }`;
   
-  console.log(`column_fields_query=${ column_fields_query }`);
-  return column_fields_query;
+  console.log(`columnFields_query=${ columnFields_query }`);
+  return columnFields_query;
 }
 
-function getBoardItemsQuery(board_id) {
-  console.log(`item_id=${ board_id }`);
+function getBoardItemsQuery(boardID) {
+  console.log(`itemID=${ boardID }`);
   
-  const items_of_board_query = ` \
+  const itemsOf_boardQuery = ` \
   query { \
-    boards (ids: ${ board_id }) { \
+    boards (ids: ${ boardID }) { \
       items { \
         id \
         name \
@@ -212,20 +212,20 @@ function getBoardItemsQuery(board_id) {
     } \
   }`;
   
-  console.log(`items_of_board_query=${ items_of_board_query }`);
-  return items_of_board_query;
+  console.log(`itemsOf_boardQuery=${ itemsOf_boardQuery }`);
+  return itemsOf_boardQuery;
 }
 
-function getBoardItemColumnsQuery(board_id, item_id) {
-  console.log(`board_id=${ board_id }, item_id=${ item_id }`);
+function getBoardItemColumnsQuery(boardID, itemID) {
+  console.log(`boardID=${ boardID }, itemID=${ itemID }`);
   
-  const board_item_columns_query = ` \
+  const boardItem_columnsQuery = ` \
   query { \
-    boards (ids: ${ board_id }) { \
-      items (ids: ${ item_id }) { \
+    boards (ids: ${ boardID }) { \
+      items (ids: ${ itemID }) { \
         id \
         name \
-        column_values { \
+        columnValues { \
           id \
           title \
           value \
@@ -234,18 +234,18 @@ function getBoardItemColumnsQuery(board_id, item_id) {
     } \
   }`;
   
-  console.log(`board_item_columns_query=${ board_item_columns_query }`);
-  return board_item_columns_query;
+  console.log(`boardItem_columnsQuery=${ boardItem_columnsQuery }`);
+  return boardItem_columnsQuery;
 }
 
-function getBoardItemColumnValuesQuery(board_id, item_id, column_id) {
-  console.log(`board_id=${ board_id }, item_id=${ item_id }, column_id=${ column_id }`);
+function getBoardItemColumnValuesQuery(boardID, itemID, columnID) {
+  console.log(`boardID=${ boardID }, itemID=${ itemID }, columnID=${ columnID }`);
   
-  const board_item_column_values_query = ` \
+  const boardItem_columnValuesQuery = ` \
   query { \
-    boards (ids: ${ board_id }) { \
-      items (ids: ${ item_id }) { \
-        column_values (ids: ${ column_id }) { \
+    boards (ids: ${ boardID }) { \
+      items (ids: ${ itemID }) { \
+        columnValues (ids: ${ columnID }) { \
           id \
           title \
           value \
@@ -254,29 +254,29 @@ function getBoardItemColumnValuesQuery(board_id, item_id, column_id) {
     } \
   }`;
   
-  console.log(`board_item_column_values_query=${ board_item_column_values_query }`);
-  return board_item_column_values_query;
+  console.log(`boardItem_columnValuesQuery=${ boardItem_columnValuesQuery }`);
+  return boardItem_columnValuesQuery;
 }
 
-function getCreateOrGetTagMutationQuery(tag_name) {
-  console.log(`tag_name=${ tag_name }`);
-  const create_or_get_tag_mutation_query = ` \
+function getCreateOrGetTagMutationQuery(tagName) {
+  console.log(`tagName=${ tagName }`);
+  const createOr_getTag_mutationQuery = ` \
     mutation { \
-      create_or_get_tag (tag_name: \"${ tag_name }\") { \
+      createOr_getTag (tagName: \"${ tagName }\") { \
         id \
       } \
     } \
   `;
   
-  console.log(`create_or_get_tag_mutation_query=${ create_or_get_tag_mutation_query }`);
-  return create_or_get_tag_mutation_query;
+  console.log(`createOr_getTag_mutationQuery=${ createOr_getTag_mutationQuery }`);
+  return createOr_getTag_mutationQuery;
 }
 
-function getChangeColumnValueMutationQuery(board_id, item_id, column_id, value) {
-  console.log(`board_id=${ board_id }, item_id=${ item_id }, column_id=${ column_id }, value=${ value }`);
-  const change_column_value_mutation_query = `\
+function getChangeColumnValueMutationQuery(boardID, itemID, columnID, value) {
+  console.log(`boardID=${ boardID }, itemID=${ itemID }, columnID=${ columnID }, value=${ value }`);
+  const changeColumnValueMutation_query = `\
     mutation {\
-      change_column_value (board_id: ${ board_id }, item_id: ${ item_id }, column_id: \"${ column_id }\", value: \"${ value }\") { \
+      changeColumnValue (boardID: ${ boardID }, itemID: ${ itemID }, columnID: \"${ columnID }\", value: \"${ value }\") { \
         id \
         title \
         value \
@@ -284,8 +284,8 @@ function getChangeColumnValueMutationQuery(board_id, item_id, column_id, value) 
     } \
   `;
   
-  console.log(`change_column_value_mutation_query=${ change_column_value_mutation_query }`);
-  return change_column_value_mutation_query;
+  console.log(`changeColumnValueMutation_query=${ changeColumnValueMutation_query }`);
+  return changeColumnValueMutation_query;
 }
 
 module.exports = {
@@ -302,126 +302,126 @@ module.exports = {
 /***/ 7513:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const monday_api_queries = __nccwpck_require__(4360);
+const mondayApiQueries = __nccwpck_require__(4360);
 const fetch = __nccwpck_require__(467);
 
 
-async function postBoardItemColumnsQuery(token, board_id, item_id) {
-  console.log(`board_id=${ board_id }`);
+async function postBoardItemColumnsQuery(token, boardID, itemID) {
+  console.log(`boardID=${ boardID }`);
 
-  const query = monday_api_queries.getBoardItemColumnsQuery(board_id, item_id);
+  const query = mondayApiQueries.getBoardItemColumnsQuery(boardID, itemID);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 
-  var column_values = null;
+  var columnValues = null;
   if (data != null && data != undefined) {
-    column_values = data.boards[0].items[0].column_values;
+    columnValues = data.boards[0].items[0].columnValues;
   }
-  console.log(`column_values=${ JSON.stringify(column_values, null, 2) }`);
+  console.log(`columnValues=${ JSON.stringify(columnValues) }`);
   
-  return column_values;
+  return columnValues;
 }
 
-async function postBoardItemColumnValuesQuery(token, board_id, item_id, column_id) {
-  console.log(`board_id=${ board_id }, item_id=${ item_id }, column_id=${ column_id }`);
+async function postBoardItemColumnValuesQuery(token, boardID, itemID, columnID) {
+  console.log(`boardID=${ boardID }, itemID=${ itemID }, columnID=${ columnID }`);
 
-  const query = monday_api_queries.getBoardItemColumnValuesQuery(board_id, item_id, column_id);
+  const query = mondayApiQueries.getBoardItemColumnValuesQuery(boardID, itemID, columnID);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 
-  var column_values = null;
+  var columnValues = null;
   if (data != null && data != undefined) {
-    column_values = data.boards[0].items[0].column_values[0];
+    columnValues = data.boards[0].items[0].columnValues[0];
   }
-  console.log(`column_values=${ JSON.stringify(column_values, null, 2) }`);
+  console.log(`columnValues=${ JSON.stringify(columnValues) }`);
   
-  return column_values;
+  return columnValues;
 }
 
-async function postBoardItemsQuery(token, board_id) {
-  console.log(`board_id=${ board_id }`);
+async function postBoardItemsQuery(token, boardID) {
+  console.log(`boardID=${ boardID }`);
 
-  const query = monday_api_queries.getBoardItemsQuery(board_id);
+  const query = mondayApiQueries.getBoardItemsQuery(boardID);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 
-  var board_items = null;
+  var boardItems = null;
   if (data != null && data != undefined) {
-    board_items = data.boards[0].items;
+    boardItems = data.boards[0].items;
   }
-  console.log(`board_items=${ JSON.stringify(board_items, null, 2) }`);
+  console.log(`boardItems=${ JSON.stringify(boardItems) }`);
   
-  return board_items;
+  return boardItems;
 }
 
-async function postChangeColumnValueMutationQuery(token, board_id, item_id, column_id, value) {
-  console.log(`board_id=${ board_id }, item_id=${ item_id }, column_id=${ column_id }, value=${ value }`);
+async function postChangeColumnValueMutationQuery(token, boardID, itemID, columnID, value) {
+  console.log(`boardID=${ boardID }, itemID=${ itemID }, columnID=${ columnID }, value=${ value }`);
 
-  const query = monday_api_queries.getChangeColumnValueMutationQuery(board_id, item_id, column_id, value);
+  const query = mondayApiQueries.getChangeColumnValueMutationQuery(boardID, itemID, columnID, value);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 
   var id = null;
   if (data != null && data != undefined) {
-    id = data.change_column_value;
+    id = data.changeColumnValue;
   }
-  console.log(`id=${ JSON.stringify(id, null, 2) }`);
+  console.log(`id=${ JSON.stringify(id) }`);
   
   return id;
 }
 
-async function postColumnFieldsQuery(token, board_id) {
-  console.log(`board_id=${ board_id }`);
+async function postColumnFieldsQuery(token, boardID) {
+  console.log(`boardID=${ boardID }`);
 
-  const query = monday_api_queries.getColumnFieldsQuery(board_id);
+  const query = mondayApiQueries.getColumnFieldsQuery(boardID);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 
-  var board_columns = null;
+  var boardColumns = null;
   if (data != null && data != undefined) {
-    board_columns = data.boards[0].columns;
+    boardColumns = data.boards[0].columns;
   }
-  console.log(`board_columns=${ JSON.stringify(board_columns) }`);
+  console.log(`boardColumns=${ JSON.stringify(boardColumns) }`);
   
-  return board_columns;
+  return boardColumns;
 }
 
-async function postColumnValuesQuery(token, board_id) {
-  console.log(`board_id=${ board_id }`);
+async function postColumnValuesQuery(token, boardID) {
+  console.log(`boardID=${ boardID }`);
 
-  const query = monday_api_queries.getColumnValuesQuery(board_id);
+  const query = mondayApiQueries.getColumnValuesQuery(boardID);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 }
 
-async function postCreateOrGetTagMutationQuery(token, tag_name) {
-  console.log(`tag_name=${ tag_name }`);
+async function postCreateOrGetTagMutationQuery(token, tagName) {
+  console.log(`tagName=${ tagName }`);
 
-  const query = monday_api_queries.getCreateOrGetTagMutationQuery(tag_name);
+  const query = mondayApiQueries.getCreateOrGetTagMutationQuery(tagName);
   console.log(`query=${ query }`);
 
   const data = await postQuery(token, query);
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
 
-  var tag_id = null;
+  var tagID = null;
   if (data != null && data != undefined) {
-    tag_id = data.create_or_get_tag.id;
+    tagID = data.createOr_getTag.id;
   }
-  console.log(`tag_id=${ tag_id }`);
+  console.log(`tagID=${ tagID }`);
   
-  return tag_id;
+  return tagID;
 }
 
 async function postQuery(token, query) {
@@ -447,12 +447,12 @@ async function postQuery(token, query) {
     });
   
   console.log(`body=${ JSON.stringify({ 'query' : query }) }`)
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
   
   if (response.data != null) {
     data = response.data;
   }
-  console.log(`data=${ JSON.stringify(data, null, 2) }`);
+  console.log(`data=${ JSON.stringify(data) }`);
   
   return data;
 }
@@ -1001,7 +1001,7 @@ class Context {
     }
     get issue() {
         const payload = this.payload;
-        return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pull_request || payload).number });
+        return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pullRequest || payload).number });
     }
     get repo() {
         if (process.env.GITHUB_REPOSITORY) {
@@ -1352,21 +1352,21 @@ class HttpClient {
         return this._processResponse(res, this.requestOptions);
     }
     async postJson(requestUrl, obj, additionalHeaders = {}) {
-        let data = JSON.stringify(obj, null, 2);
+        let data = JSON.stringify(obj);
         additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
         additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
         let res = await this.post(requestUrl, data, additionalHeaders);
         return this._processResponse(res, this.requestOptions);
     }
     async putJson(requestUrl, obj, additionalHeaders = {}) {
-        let data = JSON.stringify(obj, null, 2);
+        let data = JSON.stringify(obj);
         additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
         additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
         let res = await this.put(requestUrl, data, additionalHeaders);
         return this._processResponse(res, this.requestOptions);
     }
     async patchJson(requestUrl, obj, additionalHeaders = {}) {
-        let data = JSON.stringify(obj, null, 2);
+        let data = JSON.stringify(obj);
         additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
         additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
         let res = await this.patch(requestUrl, data, additionalHeaders);
@@ -2787,7 +2787,7 @@ const composePaginateRest = Object.assign(paginate, {
   iterator
 });
 
-const paginatingEndpoints = ["GET /app/installations", "GET /applications/grants", "GET /authorizations", "GET /enterprises/{enterprise}/actions/permissions/organizations", "GET /enterprises/{enterprise}/actions/runner-groups", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/organizations", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/runners", "GET /enterprises/{enterprise}/actions/runners", "GET /enterprises/{enterprise}/actions/runners/downloads", "GET /events", "GET /gists", "GET /gists/public", "GET /gists/starred", "GET /gists/{gist_id}/comments", "GET /gists/{gist_id}/commits", "GET /gists/{gist_id}/forks", "GET /installation/repositories", "GET /issues", "GET /marketplace_listing/plans", "GET /marketplace_listing/plans/{plan_id}/accounts", "GET /marketplace_listing/stubbed/plans", "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts", "GET /networks/{owner}/{repo}/events", "GET /notifications", "GET /organizations", "GET /orgs/{org}/actions/permissions/repositories", "GET /orgs/{org}/actions/runner-groups", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners", "GET /orgs/{org}/actions/runners", "GET /orgs/{org}/actions/runners/downloads", "GET /orgs/{org}/actions/secrets", "GET /orgs/{org}/actions/secrets/{secret_name}/repositories", "GET /orgs/{org}/blocks", "GET /orgs/{org}/credential-authorizations", "GET /orgs/{org}/events", "GET /orgs/{org}/failed_invitations", "GET /orgs/{org}/hooks", "GET /orgs/{org}/installations", "GET /orgs/{org}/invitations", "GET /orgs/{org}/invitations/{invitation_id}/teams", "GET /orgs/{org}/issues", "GET /orgs/{org}/members", "GET /orgs/{org}/migrations", "GET /orgs/{org}/migrations/{migration_id}/repositories", "GET /orgs/{org}/outside_collaborators", "GET /orgs/{org}/projects", "GET /orgs/{org}/public_members", "GET /orgs/{org}/repos", "GET /orgs/{org}/team-sync/groups", "GET /orgs/{org}/teams", "GET /orgs/{org}/teams/{team_slug}/discussions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/invitations", "GET /orgs/{org}/teams/{team_slug}/members", "GET /orgs/{org}/teams/{team_slug}/projects", "GET /orgs/{org}/teams/{team_slug}/repos", "GET /orgs/{org}/teams/{team_slug}/team-sync/group-mappings", "GET /orgs/{org}/teams/{team_slug}/teams", "GET /projects/columns/{column_id}/cards", "GET /projects/{project_id}/collaborators", "GET /projects/{project_id}/columns", "GET /repos/{owner}/{repo}/actions/artifacts", "GET /repos/{owner}/{repo}/actions/runners", "GET /repos/{owner}/{repo}/actions/runners/downloads", "GET /repos/{owner}/{repo}/actions/runs", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", "GET /repos/{owner}/{repo}/actions/secrets", "GET /repos/{owner}/{repo}/actions/workflows", "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs", "GET /repos/{owner}/{repo}/assignees", "GET /repos/{owner}/{repo}/branches", "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations", "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs", "GET /repos/{owner}/{repo}/code-scanning/alerts", "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances", "GET /repos/{owner}/{repo}/code-scanning/analyses", "GET /repos/{owner}/{repo}/collaborators", "GET /repos/{owner}/{repo}/comments", "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/commits", "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments", "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls", "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", "GET /repos/{owner}/{repo}/commits/{ref}/check-suites", "GET /repos/{owner}/{repo}/commits/{ref}/statuses", "GET /repos/{owner}/{repo}/contributors", "GET /repos/{owner}/{repo}/deployments", "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses", "GET /repos/{owner}/{repo}/events", "GET /repos/{owner}/{repo}/forks", "GET /repos/{owner}/{repo}/git/matching-refs/{ref}", "GET /repos/{owner}/{repo}/hooks", "GET /repos/{owner}/{repo}/invitations", "GET /repos/{owner}/{repo}/issues", "GET /repos/{owner}/{repo}/issues/comments", "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/issues/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/comments", "GET /repos/{owner}/{repo}/issues/{issue_number}/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/labels", "GET /repos/{owner}/{repo}/issues/{issue_number}/reactions", "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline", "GET /repos/{owner}/{repo}/keys", "GET /repos/{owner}/{repo}/labels", "GET /repos/{owner}/{repo}/milestones", "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels", "GET /repos/{owner}/{repo}/notifications", "GET /repos/{owner}/{repo}/pages/builds", "GET /repos/{owner}/{repo}/projects", "GET /repos/{owner}/{repo}/pulls", "GET /repos/{owner}/{repo}/pulls/comments", "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments", "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", "GET /repos/{owner}/{repo}/pulls/{pull_number}/files", "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments", "GET /repos/{owner}/{repo}/releases", "GET /repos/{owner}/{repo}/releases/{release_id}/assets", "GET /repos/{owner}/{repo}/secret-scanning/alerts", "GET /repos/{owner}/{repo}/stargazers", "GET /repos/{owner}/{repo}/subscribers", "GET /repos/{owner}/{repo}/tags", "GET /repos/{owner}/{repo}/teams", "GET /repositories", "GET /repositories/{repository_id}/environments/{environment_name}/secrets", "GET /scim/v2/enterprises/{enterprise}/Groups", "GET /scim/v2/enterprises/{enterprise}/Users", "GET /scim/v2/organizations/{org}/Users", "GET /search/code", "GET /search/commits", "GET /search/issues", "GET /search/labels", "GET /search/repositories", "GET /search/topics", "GET /search/users", "GET /teams/{team_id}/discussions", "GET /teams/{team_id}/discussions/{discussion_number}/comments", "GET /teams/{team_id}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /teams/{team_id}/discussions/{discussion_number}/reactions", "GET /teams/{team_id}/invitations", "GET /teams/{team_id}/members", "GET /teams/{team_id}/projects", "GET /teams/{team_id}/repos", "GET /teams/{team_id}/team-sync/group-mappings", "GET /teams/{team_id}/teams", "GET /user/blocks", "GET /user/emails", "GET /user/followers", "GET /user/following", "GET /user/gpg_keys", "GET /user/installations", "GET /user/installations/{installation_id}/repositories", "GET /user/issues", "GET /user/keys", "GET /user/marketplace_purchases", "GET /user/marketplace_purchases/stubbed", "GET /user/memberships/orgs", "GET /user/migrations", "GET /user/migrations/{migration_id}/repositories", "GET /user/orgs", "GET /user/public_emails", "GET /user/repos", "GET /user/repository_invitations", "GET /user/starred", "GET /user/subscriptions", "GET /user/teams", "GET /users", "GET /users/{username}/events", "GET /users/{username}/events/orgs/{org}", "GET /users/{username}/events/public", "GET /users/{username}/followers", "GET /users/{username}/following", "GET /users/{username}/gists", "GET /users/{username}/gpg_keys", "GET /users/{username}/keys", "GET /users/{username}/orgs", "GET /users/{username}/projects", "GET /users/{username}/received_events", "GET /users/{username}/received_events/public", "GET /users/{username}/repos", "GET /users/{username}/starred", "GET /users/{username}/subscriptions"];
+const paginatingEndpoints = ["GET /app/installations", "GET /applications/grants", "GET /authorizations", "GET /enterprises/{enterprise}/actions/permissions/organizations", "GET /enterprises/{enterprise}/actions/runner-groups", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/organizations", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/runners", "GET /enterprises/{enterprise}/actions/runners", "GET /enterprises/{enterprise}/actions/runners/downloads", "GET /events", "GET /gists", "GET /gists/public", "GET /gists/starred", "GET /gists/{gist_id}/comments", "GET /gists/{gist_id}/commits", "GET /gists/{gist_id}/forks", "GET /installation/repositories", "GET /issues", "GET /marketplace_listing/plans", "GET /marketplace_listing/plans/{plan_id}/accounts", "GET /marketplace_listing/stubbed/plans", "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts", "GET /networks/{owner}/{repo}/events", "GET /notifications", "GET /organizations", "GET /orgs/{org}/actions/permissions/repositories", "GET /orgs/{org}/actions/runner-groups", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners", "GET /orgs/{org}/actions/runners", "GET /orgs/{org}/actions/runners/downloads", "GET /orgs/{org}/actions/secrets", "GET /orgs/{org}/actions/secrets/{secret_name}/repositories", "GET /orgs/{org}/blocks", "GET /orgs/{org}/credential-authorizations", "GET /orgs/{org}/events", "GET /orgs/{org}/failed_invitations", "GET /orgs/{org}/hooks", "GET /orgs/{org}/installations", "GET /orgs/{org}/invitations", "GET /orgs/{org}/invitations/{invitation_id}/teams", "GET /orgs/{org}/issues", "GET /orgs/{org}/members", "GET /orgs/{org}/migrations", "GET /orgs/{org}/migrations/{migration_id}/repositories", "GET /orgs/{org}/outside_collaborators", "GET /orgs/{org}/projects", "GET /orgs/{org}/public_members", "GET /orgs/{org}/repos", "GET /orgs/{org}/team-sync/groups", "GET /orgs/{org}/teams", "GET /orgs/{org}/teams/{team_slug}/discussions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/invitations", "GET /orgs/{org}/teams/{team_slug}/members", "GET /orgs/{org}/teams/{team_slug}/projects", "GET /orgs/{org}/teams/{team_slug}/repos", "GET /orgs/{org}/teams/{team_slug}/team-sync/group-mappings", "GET /orgs/{org}/teams/{team_slug}/teams", "GET /projects/columns/{columnID}/cards", "GET /projects/{project_id}/collaborators", "GET /projects/{project_id}/columns", "GET /repos/{owner}/{repo}/actions/artifacts", "GET /repos/{owner}/{repo}/actions/runners", "GET /repos/{owner}/{repo}/actions/runners/downloads", "GET /repos/{owner}/{repo}/actions/runs", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", "GET /repos/{owner}/{repo}/actions/secrets", "GET /repos/{owner}/{repo}/actions/workflows", "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs", "GET /repos/{owner}/{repo}/assignees", "GET /repos/{owner}/{repo}/branches", "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations", "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs", "GET /repos/{owner}/{repo}/code-scanning/alerts", "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances", "GET /repos/{owner}/{repo}/code-scanning/analyses", "GET /repos/{owner}/{repo}/collaborators", "GET /repos/{owner}/{repo}/comments", "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/commits", "GET /repos/{owner}/{repo}/commits/{commitSHA}/branches-where-head", "GET /repos/{owner}/{repo}/commits/{commitSHA}/comments", "GET /repos/{owner}/{repo}/commits/{commitSHA}/pulls", "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", "GET /repos/{owner}/{repo}/commits/{ref}/check-suites", "GET /repos/{owner}/{repo}/commits/{ref}/statuses", "GET /repos/{owner}/{repo}/contributors", "GET /repos/{owner}/{repo}/deployments", "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses", "GET /repos/{owner}/{repo}/events", "GET /repos/{owner}/{repo}/forks", "GET /repos/{owner}/{repo}/git/matching-refs/{ref}", "GET /repos/{owner}/{repo}/hooks", "GET /repos/{owner}/{repo}/invitations", "GET /repos/{owner}/{repo}/issues", "GET /repos/{owner}/{repo}/issues/comments", "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/issues/events", "GET /repos/{owner}/{repo}/issues/{issueNumber}/comments", "GET /repos/{owner}/{repo}/issues/{issueNumber}/events", "GET /repos/{owner}/{repo}/issues/{issueNumber}/labels", "GET /repos/{owner}/{repo}/issues/{issueNumber}/reactions", "GET /repos/{owner}/{repo}/issues/{issueNumber}/timeline", "GET /repos/{owner}/{repo}/keys", "GET /repos/{owner}/{repo}/labels", "GET /repos/{owner}/{repo}/milestones", "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels", "GET /repos/{owner}/{repo}/notifications", "GET /repos/{owner}/{repo}/pages/builds", "GET /repos/{owner}/{repo}/projects", "GET /repos/{owner}/{repo}/pulls", "GET /repos/{owner}/{repo}/pulls/comments", "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/pulls/{pullNumber}/comments", "GET /repos/{owner}/{repo}/pulls/{pullNumber}/commits", "GET /repos/{owner}/{repo}/pulls/{pullNumber}/files", "GET /repos/{owner}/{repo}/pulls/{pullNumber}/requested_reviewers", "GET /repos/{owner}/{repo}/pulls/{pullNumber}/reviews", "GET /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}/comments", "GET /repos/{owner}/{repo}/releases", "GET /repos/{owner}/{repo}/releases/{release_id}/assets", "GET /repos/{owner}/{repo}/secret-scanning/alerts", "GET /repos/{owner}/{repo}/stargazers", "GET /repos/{owner}/{repo}/subscribers", "GET /repos/{owner}/{repo}/tags", "GET /repos/{owner}/{repo}/teams", "GET /repositories", "GET /repositories/{repository_id}/environments/{environment_name}/secrets", "GET /scim/v2/enterprises/{enterprise}/Groups", "GET /scim/v2/enterprises/{enterprise}/Users", "GET /scim/v2/organizations/{org}/Users", "GET /search/code", "GET /search/commits", "GET /search/issues", "GET /search/labels", "GET /search/repositories", "GET /search/topics", "GET /search/users", "GET /teams/{team_id}/discussions", "GET /teams/{team_id}/discussions/{discussion_number}/comments", "GET /teams/{team_id}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /teams/{team_id}/discussions/{discussion_number}/reactions", "GET /teams/{team_id}/invitations", "GET /teams/{team_id}/members", "GET /teams/{team_id}/projects", "GET /teams/{team_id}/repos", "GET /teams/{team_id}/team-sync/group-mappings", "GET /teams/{team_id}/teams", "GET /user/blocks", "GET /user/emails", "GET /user/followers", "GET /user/following", "GET /user/gpg_keys", "GET /user/installations", "GET /user/installations/{installation_id}/repositories", "GET /user/issues", "GET /user/keys", "GET /user/marketplace_purchases", "GET /user/marketplace_purchases/stubbed", "GET /user/memberships/orgs", "GET /user/migrations", "GET /user/migrations/{migration_id}/repositories", "GET /user/orgs", "GET /user/public_emails", "GET /user/repos", "GET /user/repository_invitations", "GET /user/starred", "GET /user/subscriptions", "GET /user/teams", "GET /users", "GET /users/{username}/events", "GET /users/{username}/events/orgs/{org}", "GET /users/{username}/events/public", "GET /users/{username}/followers", "GET /users/{username}/following", "GET /users/{username}/gists", "GET /users/{username}/gpg_keys", "GET /users/{username}/keys", "GET /users/{username}/orgs", "GET /users/{username}/projects", "GET /users/{username}/received_events", "GET /users/{username}/received_events/public", "GET /users/{username}/repos", "GET /users/{username}/starred", "GET /users/{username}/subscriptions"];
 
 function isPaginatingEndpoint(arg) {
   if (typeof arg === "string") {
@@ -3134,7 +3134,7 @@ const Endpoints = {
     createTree: ["POST /repos/{owner}/{repo}/git/trees"],
     deleteRef: ["DELETE /repos/{owner}/{repo}/git/refs/{ref}"],
     getBlob: ["GET /repos/{owner}/{repo}/git/blobs/{file_sha}"],
-    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commit_sha}"],
+    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commitSHA}"],
     getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
     getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
     getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
@@ -3166,28 +3166,28 @@ const Endpoints = {
     }]
   },
   issues: {
-    addAssignees: ["POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"],
-    addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    addAssignees: ["POST /repos/{owner}/{repo}/issues/{issueNumber}/assignees"],
+    addLabels: ["POST /repos/{owner}/{repo}/issues/{issueNumber}/labels"],
     checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
     create: ["POST /repos/{owner}/{repo}/issues"],
-    createComment: ["POST /repos/{owner}/{repo}/issues/{issue_number}/comments"],
+    createComment: ["POST /repos/{owner}/{repo}/issues/{issueNumber}/comments"],
     createLabel: ["POST /repos/{owner}/{repo}/labels"],
     createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
     deleteComment: ["DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"],
     deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
     deleteMilestone: ["DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"],
-    get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
+    get: ["GET /repos/{owner}/{repo}/issues/{issueNumber}"],
     getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
     getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
     getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
     getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
     list: ["GET /issues"],
     listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
-    listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
+    listComments: ["GET /repos/{owner}/{repo}/issues/{issueNumber}/comments"],
     listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
-    listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
+    listEvents: ["GET /repos/{owner}/{repo}/issues/{issueNumber}/events"],
     listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
-    listEventsForTimeline: ["GET /repos/{owner}/{repo}/issues/{issue_number}/timeline", {
+    listEventsForTimeline: ["GET /repos/{owner}/{repo}/issues/{issueNumber}/timeline", {
       mediaType: {
         previews: ["mockingbird"]
       }
@@ -3197,15 +3197,15 @@ const Endpoints = {
     listForRepo: ["GET /repos/{owner}/{repo}/issues"],
     listLabelsForMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels"],
     listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
-    listLabelsOnIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    listLabelsOnIssue: ["GET /repos/{owner}/{repo}/issues/{issueNumber}/labels"],
     listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
-    lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-    removeAllLabels: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"],
-    removeAssignees: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"],
-    removeLabel: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"],
-    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
-    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-    update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
+    lock: ["PUT /repos/{owner}/{repo}/issues/{issueNumber}/lock"],
+    removeAllLabels: ["DELETE /repos/{owner}/{repo}/issues/{issueNumber}/labels"],
+    removeAssignees: ["DELETE /repos/{owner}/{repo}/issues/{issueNumber}/assignees"],
+    removeLabel: ["DELETE /repos/{owner}/{repo}/issues/{issueNumber}/labels/{name}"],
+    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issueNumber}/labels"],
+    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issueNumber}/lock"],
+    update: ["PATCH /repos/{owner}/{repo}/issues/{issueNumber}"],
     updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
     updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
     updateMilestone: ["PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"]
@@ -3373,7 +3373,7 @@ const Endpoints = {
         previews: ["inertia"]
       }
     }],
-    createCard: ["POST /projects/columns/{column_id}/cards", {
+    createCard: ["POST /projects/columns/{columnID}/cards", {
       mediaType: {
         previews: ["inertia"]
       }
@@ -3408,7 +3408,7 @@ const Endpoints = {
         previews: ["inertia"]
       }
     }],
-    deleteColumn: ["DELETE /projects/columns/{column_id}", {
+    deleteColumn: ["DELETE /projects/columns/{columnID}", {
       mediaType: {
         previews: ["inertia"]
       }
@@ -3423,7 +3423,7 @@ const Endpoints = {
         previews: ["inertia"]
       }
     }],
-    getColumn: ["GET /projects/columns/{column_id}", {
+    getColumn: ["GET /projects/columns/{columnID}", {
       mediaType: {
         previews: ["inertia"]
       }
@@ -3433,7 +3433,7 @@ const Endpoints = {
         previews: ["inertia"]
       }
     }],
-    listCards: ["GET /projects/columns/{column_id}/cards", {
+    listCards: ["GET /projects/columns/{columnID}/cards", {
       mediaType: {
         previews: ["inertia"]
       }
@@ -3468,7 +3468,7 @@ const Endpoints = {
         previews: ["inertia"]
       }
     }],
-    moveColumn: ["POST /projects/columns/{column_id}/moves", {
+    moveColumn: ["POST /projects/columns/{columnID}/moves", {
       mediaType: {
         previews: ["inertia"]
       }
@@ -3488,43 +3488,43 @@ const Endpoints = {
         previews: ["inertia"]
       }
     }],
-    updateColumn: ["PATCH /projects/columns/{column_id}", {
+    updateColumn: ["PATCH /projects/columns/{columnID}", {
       mediaType: {
         previews: ["inertia"]
       }
     }]
   },
   pulls: {
-    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/merge"],
     create: ["POST /repos/{owner}/{repo}/pulls"],
-    createReplyForReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies"],
-    createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
-    createReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"],
-    deletePendingReview: ["DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+    createReplyForReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pullNumber}/comments/{comment_id}/replies"],
+    createReview: ["POST /repos/{owner}/{repo}/pulls/{pullNumber}/reviews"],
+    createReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pullNumber}/comments"],
+    deletePendingReview: ["DELETE /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}"],
     deleteReviewComment: ["DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
-    dismissReview: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals"],
-    get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
-    getReview: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+    dismissReview: ["PUT /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}/dismissals"],
+    get: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}"],
+    getReview: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}"],
     getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
     list: ["GET /repos/{owner}/{repo}/pulls"],
-    listCommentsForReview: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments"],
-    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
-    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
-    listRequestedReviewers: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
-    listReviewComments: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"],
+    listCommentsForReview: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}/comments"],
+    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/commits"],
+    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/files"],
+    listRequestedReviewers: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/requested_reviewers"],
+    listReviewComments: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/comments"],
     listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
-    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
-    merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
-    removeRequestedReviewers: ["DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
-    requestReviewers: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
-    submitReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"],
-    update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
-    updateBranch: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch", {
+    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pullNumber}/reviews"],
+    merge: ["PUT /repos/{owner}/{repo}/pulls/{pullNumber}/merge"],
+    removeRequestedReviewers: ["DELETE /repos/{owner}/{repo}/pulls/{pullNumber}/requested_reviewers"],
+    requestReviewers: ["POST /repos/{owner}/{repo}/pulls/{pullNumber}/requested_reviewers"],
+    submitReview: ["POST /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}/events"],
+    update: ["PATCH /repos/{owner}/{repo}/pulls/{pullNumber}"],
+    updateBranch: ["PUT /repos/{owner}/{repo}/pulls/{pullNumber}/update-branch", {
       mediaType: {
         previews: ["lydian"]
       }
     }],
-    updateReview: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+    updateReview: ["PUT /repos/{owner}/{repo}/pulls/{pullNumber}/reviews/{review_id}"],
     updateReviewComment: ["PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"]
   },
   rateLimit: {
@@ -3536,7 +3536,7 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }],
-    createForIssue: ["POST /repos/{owner}/{repo}/issues/{issue_number}/reactions", {
+    createForIssue: ["POST /repos/{owner}/{repo}/issues/{issueNumber}/reactions", {
       mediaType: {
         previews: ["squirrel-girl"]
       }
@@ -3571,7 +3571,7 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }],
-    deleteForIssue: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}", {
+    deleteForIssue: ["DELETE /repos/{owner}/{repo}/issues/{issueNumber}/reactions/{reaction_id}", {
       mediaType: {
         previews: ["squirrel-girl"]
       }
@@ -3608,7 +3608,7 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }],
-    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions", {
+    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issueNumber}/reactions", {
       mediaType: {
         previews: ["squirrel-girl"]
       }
@@ -3657,7 +3657,7 @@ const Endpoints = {
     }],
     compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
     compareCommitsWithBasehead: ["GET /repos/{owner}/{repo}/compare/{basehead}"],
-    createCommitComment: ["POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
+    createCommitComment: ["POST /repos/{owner}/{repo}/commits/{commitSHA}/comments"],
     createCommitSignatureProtection: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures", {
       mediaType: {
         previews: ["zzzax"]
@@ -3706,7 +3706,7 @@ const Endpoints = {
         previews: ["switcheroo"]
       }
     }],
-    deletePullRequestReviewProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
+    deletePullRequestReviewProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pullRequest_reviews"],
     deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
     deleteReleaseAsset: ["DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"],
     deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
@@ -3773,7 +3773,7 @@ const Endpoints = {
     getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
     getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
     getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
-    getPullRequestReviewProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
+    getPullRequestReviewProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pullRequest_reviews"],
     getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
     getReadme: ["GET /repos/{owner}/{repo}/readme"],
     getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
@@ -3789,13 +3789,13 @@ const Endpoints = {
     getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
     getWebhookConfigForRepo: ["GET /repos/{owner}/{repo}/hooks/{hook_id}/config"],
     listBranches: ["GET /repos/{owner}/{repo}/branches"],
-    listBranchesForHeadCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", {
+    listBranchesForHeadCommit: ["GET /repos/{owner}/{repo}/commits/{commitSHA}/branches-where-head", {
       mediaType: {
         previews: ["groot"]
       }
     }],
     listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
-    listCommentsForCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
+    listCommentsForCommit: ["GET /repos/{owner}/{repo}/commits/{commitSHA}/comments"],
     listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
     listCommitStatusesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/statuses"],
     listCommits: ["GET /repos/{owner}/{repo}/commits"],
@@ -3812,7 +3812,7 @@ const Endpoints = {
     listLanguages: ["GET /repos/{owner}/{repo}/languages"],
     listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
     listPublic: ["GET /repositories"],
-    listPullRequestsAssociatedWithCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls", {
+    listPullRequestsAssociatedWithCommit: ["GET /repos/{owner}/{repo}/commits/{commitSHA}/pulls", {
       mediaType: {
         previews: ["groot"]
       }
@@ -3865,7 +3865,7 @@ const Endpoints = {
     updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
     updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
     updateInvitation: ["PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"],
-    updatePullRequestReviewProtection: ["PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
+    updatePullRequestReviewProtection: ["PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pullRequest_reviews"],
     updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
     updateReleaseAsset: ["PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"],
     updateStatusCheckPotection: ["PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks", {}, {
@@ -6726,7 +6726,7 @@ async function deleteTags(octokit, owner, repo, tags = null) {
 
 async function getBranch(octokit, owner, repo, branch) {
   console.log(`owner=${ owner }, repo=${ repo }, branch=${ branch }`);
-  var result_branch = null;
+  var resultBranch = null;
 
   const response = await octokit.rest.repos.getBranch({
     owner: owner,
@@ -6738,72 +6738,72 @@ async function getBranch(octokit, owner, repo, branch) {
   
   if (response.status == 200) {
     console.log(`if`);
-    result_branch = response.data;
+    resultBranch = response.data;
     console.log(`response.data=${ JSON.stringify(response.data) }`);
 
   }
-  console.log(`resulst_branch=${ JSON.stringify(result_branch) }`);
-  return result_branch;
+  console.log(`resultsBranch=${ JSON.stringify(resultBranch) }`);
+  return resultBranch;
 }
 
-async function getCommit(octokit, owner, repo, commit_sha) {
-  console.log(`owner=${ owner }, repo=${ repo }, commit_sha=${ commit_sha }`);
+async function getCommit(octokit, owner, repo, commitSHA) {
+  console.log(`owner=${ owner }, repo=${ repo }, commitSHA=${ commitSHA }`);
 
   var commit = null;
   
   const response = await octokit.rest.git.getCommit({
     owner,
     repo,
-    commit_sha
+    commitSHA
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
     commit = response.data;
   }
 
-  console.log(`tags=${ JSON.stringify(commit, null, 2) }`);
+  console.log(`tags=${ JSON.stringify(commit) }`);
   return commit;
 }
 
-async function getPullRequest(octokit, owner, repo, pull_number) {
-  console.log(`owner=${ owner }, repo=${ repo }, pull_number=${ pull_number }`);
+async function getPullRequest(octokit, owner, repo, pullNumber) {
+  console.log(`owner=${ owner }, repo=${ repo }, pullNumber=${ pullNumber }`);
 
-  var pull_request = null;
+  var pullRequest = null;
   
   const response = await octokit.rest.pulls.get({
     owner: owner,
     repo: repo,
-    pull_number: pull_number
+    pullNumber: pullNumber
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    pull_request = response.data;
+    pullRequest = response.data;
   }
 
-  console.log(`pull_request=${ JSON.stringify(pull_request, null, 2) }`);
-  return pull_request;
+  console.log(`pullRequest=${ JSON.stringify(pullRequest) }`);
+  return pullRequest;
 }
 
 async function getPullsList(octokit, owner, repo) {
   console.log(`owner=${ owner }, repo=${ repo }`);
 
-  var list_pull_requests = null;
+  var listPull_requests = null;
   
   const response = await octokit.rest.pulls.list({
     owner,
     repo
   });
   
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    list_pull_requests = response.data;
+    listPull_requests = response.data;
   }
 
-  console.log(`list_pull_requests=${ JSON.stringify(list_pull_requests, null, 2) }`);
-  return list_pull_requests;
+  console.log(`listPull_requests=${ JSON.stringify(listPull_requests) }`);
+  return listPull_requests;
 }
 
 async function getTags(octokit, owner, repo) {
@@ -6825,104 +6825,104 @@ async function getTags(octokit, owner, repo) {
   return tags;
 }
 
-async function listComments(octokit, owner, repo, issue_number) {
-  console.log(`owner=${ owner }, repo=${ repo }, issue_number=${ issue_number }`);
+async function listComments(octokit, owner, repo, issueNumber) {
+  console.log(`owner=${ owner }, repo=${ repo }, issueNumber=${ issueNumber }`);
 
-  var list_comments = null;
+  var listComments = null;
   
   const response = await octokit.rest.issues.listComments({
     owner,
     repo,
-    issue_number
+    issueNumber
   });  
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    list_comments = response.data;
+    listComments = response.data;
   }
 
-  console.log(`list_comments=${ JSON.stringify(list_comments, null, 2) }`);
-  return list_comments;
+  console.log(`listComments=${ JSON.stringify(listComments) }`);
+  return listComments;
 }
 
-async function listCommentsForCommit(octokit, owner, repo, commit_sha) {
-  console.log(`owner=${ owner }, repo=${ repo }, commit_sha=${ commit_sha }`);
+async function listCommentsForCommit(octokit, owner, repo, commitSHA) {
+  console.log(`owner=${ owner }, repo=${ repo }, commitSHA=${ commitSHA }`);
 
-  var list_comments_for_commit = null;
+  var listComments_forCommit = null;
   
   const response = await octokit.rest.repos.listCommentsForCommit({
     owner,
     repo,
-    commit_sha
+    commitSHA
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    list_comments_for_commit = response.data;
+    listComments_forCommit = response.data;
   }
 
-  console.log(`list_comments_for_commit=${ JSON.stringify(list_comments_for_commit, null, 2) }`);
-  return list_comments_for_commit;
+  console.log(`listComments_forCommit=${ JSON.stringify(listComments_forCommit) }`);
+  return listComments_forCommit;
 }
 
-async function listPullRequestsAssociatedWithCommit(octokit, owner, repo, commit_sha) {
-  console.log(`owner=${ owner }, repo=${ repo }, commit_sha=${ commit_sha }`);
+async function listPullRequestsAssociatedWithCommit(octokit, owner, repo, commitSHA) {
+  console.log(`owner=${ owner }, repo=${ repo }, commitSHA=${ commitSHA }`);
 
-  var list_pull_requests_associated_with_commit = null;
+  var listPull_requestsAssociated_withCommit = null;
   
   const response = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
     owner,
     repo,
-    commit_sha
+    commitSHA
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    list_pull_requests_associated_with_commit = response.data;
+    listPull_requestsAssociated_withCommit = response.data;
   }
 
-  console.log(`list_pull_requests_associated_with_commit=${ JSON.stringify(list_pull_requests_associated_with_commit, null, 2) }`);
-  return list_pull_requests_associated_with_commit;
+  console.log(`listPull_requestsAssociated_withCommit=${ JSON.stringify(listPull_requestsAssociated_withCommit) }`);
+  return listPull_requestsAssociated_withCommit;
 }
 
-async function listReviewComments(octokit, owner, repo, pull_number) {
-  console.log(`owner=${ owner }, repo=${ repo }, pull_number=${ pull_number }`);
+async function listReviewComments(octokit, owner, repo, pullNumber) {
+  console.log(`owner=${ owner }, repo=${ repo }, pullNumber=${ pullNumber }`);
 
-  var list_review_comments = null;
+  var listReview_comments = null;
   
   const response = await octokit.rest.pulls.listReviewComments({
     owner,
     repo,
-    pull_number
+    pullNumber
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    list_review_comments = response.data;
+    listReview_comments = response.data;
   }
 
-  console.log(`list_review_comments=${ JSON.stringify(list_review_comments, null, 2) }`);
-  return list_review_comments;
+  console.log(`listReview_comments=${ JSON.stringify(listReview_comments) }`);
+  return listReview_comments;
 }
 
-async function listReviews(octokit, owner, repo, pull_number) {
-  console.log(`owner=${ owner }, repo=${ repo }, pull_number=${ pull_number }`);
+async function listReviews(octokit, owner, repo, pullNumber) {
+  console.log(`owner=${ owner }, repo=${ repo }, pullNumber=${ pullNumber }`);
 
-  var list_reviews = null;
+  var listReviews = null;
   
   const response = await octokit.rest.pulls.listReviews({
     owner,
     repo,
-    pull_number
+    pullNumber
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    list_reviews = response.data;
+    listReviews = response.data;
   }
 
-  console.log(`list_reviews=${ JSON.stringify(list_reviews, null, 2) }`);
-  return list_reviews;
+  console.log(`listReviews=${ JSON.stringify(listReviews) }`);
+  return listReviews;
 }
 
 module.exports = {
@@ -6950,28 +6950,28 @@ module.exports = {
 
 const constants = __nccwpck_require__(1629)
 
-function parsePullRequestBody(pull_request_body) {
-  console.log(`pull_request_body=${ pull_request_body }`);
+function parsePullRequestBody(pullRequest_body) {
+  console.log(`pullRequest_body=${ pullRequest_body }`);
 
   const result = {
     descriptions: [],
     mondays: []
   };
 
-  pull_request_body = pull_request_body.replace(constants.COMMENT_REGEX, "");
-  console.log(`pull_request_body=${ JSON.stringify(pull_request_body, null, 2) }`);
+  pullRequest_body = pullRequest_body.replace(constants.COMMENT_REGEX, "");
+  console.log(`pullRequest_body=${ JSON.stringify(pullRequest_body) }`);
 
-  const description_lines_after_regex = constants.PR_DESCRIPTION_LINES_REGEX.exec(pull_request_body);
+  const descriptionLines_afterRegex = constants.PR_DESCRIPTION_LINES_REGEX.exec(pullRequest_body);
 
-  if (description_lines_after_regex != null && description_lines_after_regex.length != null) {
-    for (let description_lines_index = 0; 
-      description_lines_index < description_lines_after_regex.length;
-      description_lines_index+=3) {
-      const type = description_lines_after_regex[description_lines_index + 1];
-      const description = description_lines_after_regex[description_lines_index + 2];
+  if (descriptionLines_afterRegex != null && descriptionLines_afterRegex.length != null) {
+    for (let descriptionLines_index = 0; 
+      descriptionLines_index < descriptionLines_afterRegex.length;
+      descriptionLines_index+=3) {
+      const type = descriptionLines_afterRegex[descriptionLines_index + 1];
+      const description = descriptionLines_afterRegex[descriptionLines_index + 2];
 
-      console.log(`type=${ JSON.stringify(type, null, 2) }`);
-      console.log(`description=${ JSON.stringify(description, null, 2) }`);
+      console.log(`type=${ JSON.stringify(type) }`);
+      console.log(`description=${ JSON.stringify(description) }`);
 
       result.descriptions.push(
         {
@@ -6980,19 +6980,19 @@ function parsePullRequestBody(pull_request_body) {
         });
     }
 
-    const monday_links = pull_request_body.match(constants.PR_MONDAY_LINKS_REGEX);
-    console.log(`monday_links=${ JSON.stringify(monday_links, null, 2) }`);
-    if (monday_links!=null) {
-      for (const monday_link of monday_links) {
-        console.log(`monday_link=${ JSON.stringify(monday_link, null, 2) }`);
-        result.mondays.push(monday_link);
+    const mondayLinks = pullRequest_body.match(constants.PR_MONDAY_LINKS_REGEX);
+    console.log(`mondayLinks=${ JSON.stringify(mondayLinks) }`);
+    if (mondayLinks!=null) {
+      for (const mondayLink of mondayLinks) {
+        console.log(`mondayLink=${ JSON.stringify(mondayLink) }`);
+        result.mondays.push(mondayLink);
       }
     }
   } else {
     return null;
   }
 
-  console.log(`result=${ JSON.stringify(result, null, 2) }`);
+  console.log(`result=${ JSON.stringify(result) }`);
   return result;
 }
 
@@ -7000,7 +7000,7 @@ function parseVersion(version) {
   const results = version.match(constants.VERSION_REGEX);
   if (results!=null) {
     const version = results[0];
-    console.log(`results=${ JSON.stringify(results, null, 2) }`);
+    console.log(`results=${ JSON.stringify(results) }`);
     console.log(`version=${ version }`);
     const major = parseInt(results[1]);
     const minor = parseInt(results[2]);
@@ -7013,9 +7013,9 @@ function parseVersion(version) {
 }
 
 function parseVersionFromTag(tag) {
-  const tag_name = tag.name.toString();
+  const tagName = tag.name.toString();
 
-  return parseVersion(tag_name);
+  return parseVersion(tagName);
 }
 
 module.exports = {
@@ -7031,14 +7031,14 @@ module.exports = {
 
 const constants = __nccwpck_require__(1629);
 
-function commit_message_to_step(message) {
+function commitMessageToStep(message) {
   const results = message.toString().match(constants.STEP_REGEX);
-  console.log(JSON.stringify(message, null, 2));
-  console.log(JSON.stringify(results, null, 2));
+  console.log(JSON.stringify(message));
+  console.log(JSON.stringify(results));
 
   var step = null;
   if (results && results.length > 1) {
-    console.log(JSON.stringify(results[1], null, 2));
+    console.log(JSON.stringify(results[1]));
     if (results[1] == "PATCH") {
       return "PATCH";
     } else if (results[1] == "MINOR") {
@@ -7047,7 +7047,7 @@ function commit_message_to_step(message) {
       return "MAJOR";
     }
   }
-  console.log(JSON.stringify(step, null, 2));
+  console.log(JSON.stringify(step));
   return step;
 }
 
@@ -7062,56 +7062,56 @@ async function compareCommits(octokit, owner, repo, base, head) {
     base,
     head
   });
-  console.log(`response=${ JSON.stringify(response, null, 2) }`);
+  console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
     compare = response.data;
   }
 
-  console.log(`compare=${ JSON.stringify(compare, null, 2) }`);
+  console.log(`compare=${ JSON.stringify(compare) }`);
   return compare;
 }
 
-function generateChangeLog(relevant_pull_requests_set, version, date) {
+function generateChangeLog(relevantPullRequestsSet, version, date) {
   console.log(`version=${ version }, date=${ date }`);
-  console.log(`relevant_pull_requests_set=${ JSON.stringify([...relevant_pull_requests_set], null, 2) }`);
+  console.log(`relevantPullRequestsSet=${ JSON.stringify([...relevantPullRequestsSet]) }`);
 
-  var change_log = "";
+  var changeLog = "";
 
-  change_log = `${ change_log }Version ${ version } - date ${ date }\n`;
+  changeLog = `${ changeLog }Version ${ version } - date ${ date }\n`;
 
-  for (const relevant_pull_request_string of relevant_pull_requests_set.values()) {
-    const relevant_pull_request = JSON.parse(relevant_pull_request_string).parsed_pull_request
-    console.log(`relevant_pull_request=${ JSON.stringify(relevant_pull_request, null, 2) }`);
+  for (const relevantPullRequest_string of relevantPullRequestsSet.values()) {
+    const relevantPullRequest = JSON.parse(relevantPullRequest_string).parsedPull_request
+    console.log(`relevantPullRequest=${ JSON.stringify(relevantPullRequest) }`);
 
-    relevant_pull_request.descriptions.forEach(description => {
-      change_log = `${ change_log }\t * ${ description.type }: ${ description.description }`;
+    relevantPullRequest.descriptions.forEach(description => {
+      changeLog = `${ changeLog }\t * ${ description.type }: ${ description.description }`;
     });
 
-    relevant_pull_request.mondays.forEach(monday => {
-      change_log = `${ change_log }(${ monday })`;
+    relevantPullRequest.mondays.forEach(monday => {
+      changeLog = `${ changeLog }(${ monday })`;
     });
 
-    change_log = `${ change_log }\n`;
+    changeLog = `${ changeLog }\n`;
   }
 
-  console.log(`change_log=${ JSON.stringify(change_log, null, 2) }`);
+  console.log(`changeLog=${ JSON.stringify(changeLog) }`);
   
-  return change_log;
+  return changeLog;
 }
 
 function getFormattedDate() {
-  let date_time_format = new Intl.DateTimeFormat('en-US');
-  let date = date_time_format.format();
+  let dateTime_format = new Intl.DateTimeFormat('en-US');
+  let date = dateTime_format.format();
   console.log(date);
   return date;
 }
 
 function nextVersion(major, minor, patch, step = null) {
-  const prev_version = `v${ major }.${ minor }.${ patch }`;
+  const prevVersion = `v${ major }.${ minor }.${ patch }`;
 
   console.log(`major=${ major }, minor=${ minor }, patch=${ patch }`);
-  console.log(`prev_version=${ prev_version }`);
+  console.log(`prevVersion=${ prevVersion }`);
 
   switch(step) {
     case "MINOR":
@@ -7134,43 +7134,43 @@ function nextVersion(major, minor, patch, step = null) {
   return nextVersion;
 }
 
-async function updateMonday(relevant_pull_requests_set, version) {
+async function updateMonday(relevantPullRequestsSet, version) {
   console.log(`version=${ version }`);
-  console.log(`relevant_pull_requests_set=${ JSON.stringify([...relevant_pull_requests_set], null, 2) }`);
+  console.log(`relevantPullRequestsSet=${ JSON.stringify([...relevantPullRequestsSet]) }`);
 
-  for (const relevant_pull_request_string of relevant_pull_requests_set.values()) {
-    const relevant_pull_request = JSON.parse(relevant_pull_request_string).parsed_pull_request
-    console.log(`relevant_pull_request=${ JSON.stringify(relevant_pull_request, null, 2) }`);
+  for (const relevantPullRequest_string of relevantPullRequestsSet.values()) {
+    const relevantPullRequest = JSON.parse(relevantPullRequest_string).parsedPull_request
+    console.log(`relevantPullRequest=${ JSON.stringify(relevantPullRequest) }`);
 
-    relevant_pull_request.mondays.forEach(monday => {
-      console.log(`monday=${ JSON.stringify(monday, null, 2) }`);
+    relevantPullRequest.mondays.forEach(monday => {
+      console.log(`monday=${ JSON.stringify(monday) }`);
       
-      const parsed_monday_url = new URL(monday);
-      const monday_board = parsed_monday_url.searchParams.get("board");
-      const monday_item = parsed_monday_url.searchParams.get("item");
+      const parsedMonday_url = new URL(monday);
+      const mondayBoard = parsedMonday_url.searchParams.get("board");
+      const mondayItem = parsedMonday_url.searchParams.get("item");
 
-      if (monday_board != null && monday_item != null) {
-        console.log(`monday_board=${ JSON.stringify(monday_board, null, 2) }`);
-        console.log(`monday_item=${ JSON.stringify(monday_item, null, 2) }`);
+      if (mondayBoard != null && mondayItem != null) {
+        console.log(`mondayBoard=${ JSON.stringify(mondayBoard) }`);
+        console.log(`mondayItem=${ JSON.stringify(mondayItem) }`);
 
-        const BoardItemColumns = monday_api_wrapper.postBoardItemColumnsQuery(monday_token, board_id, item_id);
-        console.log(`BoardItemColumns=${ JSON.stringify(BoardItemColumns, null, 2) }`);
-        const column_found = BoardItemColumns.find(column => column.title == column_title);
-        console.log(`column_found=${ JSON.stringify(column_found, null, 2) }`);
-        const column_id = column_found.id;
-        monday_api_wrapper.postBoardItemColumnValuesQuery(monday_token, board_id, item_id, column_id);
-        monday_api_wrapper.postChangeColumnValueMutationQuery(monday_token, board_id, item_id, column_id, `\\\"${ version }\\\"`);
-        const column_value = monday_api_wrapper.postBoardItemColumnValuesQuery(monday_token, board_id, item_id, column_id);
-        console.log(`column_value=${ JSON.stringify(column_value, null, 2) }`);
-        console.log(`column_value.value=${ column_value.value }`);
-        expect(column_value.value).toBe(`\"${ version }\"`);
+        const BoardItemColumns = mondayApi_wrapper.postBoardItemColumnsQuery(mondayToken, boardID, itemID);
+        console.log(`BoardItemColumns=${ JSON.stringify(BoardItemColumns) }`);
+        const columnFound = BoardItemColumns.find(column => column.title == columnTitle);
+        console.log(`columnFound=${ JSON.stringify(columnFound) }`);
+        const columnID = columnFound.id;
+        mondayApi_wrapper.postBoardItemColumnValuesQuery(mondayToken, boardID, itemID, columnID);
+        mondayApi_wrapper.postChangeColumnValueMutationQuery(mondayToken, boardID, itemID, columnID, `\\\"${ version }\\\"`);
+        const columnValue = mondayApi_wrapper.postBoardItemColumnValuesQuery(mondayToken, boardID, itemID, columnID);
+        console.log(`columnValue=${ JSON.stringify(columnValue) }`);
+        console.log(`columnValue.value=${ columnValue.value }`);
+        expect(columnValue.value).toBe(`\"${ version }\"`);
       }
     });
   }
 }
 
 module.exports = {
-  commit_message_to_step,
+  commitMessageToStep,
   compareCommits,
   generateChangeLog,
   getFormattedDate,
