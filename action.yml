@@ -14,5 +14,5 @@ outputs:
   logs:
     description: 'logs'
 runs:
-  using: 'node14.5'
+  using: 'node12'
   main: 'dist/index.js'
