@@ -1,7 +1,7 @@
 function getColumnFieldsQuery(boardID) {
   console.log(`boardID=${ boardID }`);
 
-  const columnFields_query = ` \
+  const columnFieldsQuery = ` \
     query { \
       boards (ids: ${ boardID }) { \
         columns { \
@@ -11,14 +11,14 @@ function getColumnFieldsQuery(boardID) {
       } \
     }`;
   
-  console.log(`columnFields_query=${ columnFields_query }`);
-  return columnFields_query;
+  console.log(`columnFieldsQuery=${ columnFieldsQuery }`);
+  return columnFieldsQuery;
 }
 
 function getBoardItemsQuery(boardID) {
   console.log(`itemID=${ boardID }`);
   
-  const itemsOf_boardQuery = ` \
+  const itemsOfBoardQuery = ` \
   query { \
     boards (ids: ${ boardID }) { \
       items { \
@@ -28,20 +28,20 @@ function getBoardItemsQuery(boardID) {
     } \
   }`;
   
-  console.log(`itemsOf_boardQuery=${ itemsOf_boardQuery }`);
-  return itemsOf_boardQuery;
+  console.log(`itemsOfBoardQuery=${ itemsOfBoardQuery }`);
+  return itemsOfBoardQuery;
 }
 
 function getBoardItemColumnsQuery(boardID, itemID) {
   console.log(`boardID=${ boardID }, itemID=${ itemID }`);
   
-  const boardItem_columnsQuery = ` \
+  const boardItemColumnsQuery = ` \
   query { \
     boards (ids: ${ boardID }) { \
       items (ids: ${ itemID }) { \
         id \
         name \
-        columnValues { \
+        column_values { \
           id \
           title \
           value \
@@ -50,18 +50,18 @@ function getBoardItemColumnsQuery(boardID, itemID) {
     } \
   }`;
   
-  console.log(`boardItem_columnsQuery=${ boardItem_columnsQuery }`);
-  return boardItem_columnsQuery;
+  console.log(`boardItemColumnsQuery=${ boardItemColumnsQuery }`);
+  return boardItemColumnsQuery;
 }
 
 function getBoardItemColumnValuesQuery(boardID, itemID, columnID) {
   console.log(`boardID=${ boardID }, itemID=${ itemID }, columnID=${ columnID }`);
   
-  const boardItem_columnValuesQuery = ` \
+  const boardItemColumnValuesQuery = ` \
   query { \
     boards (ids: ${ boardID }) { \
       items (ids: ${ itemID }) { \
-        columnValues (ids: ${ columnID }) { \
+        column_values (ids: ${ columnID }) { \
           id \
           title \
           value \
@@ -70,27 +70,27 @@ function getBoardItemColumnValuesQuery(boardID, itemID, columnID) {
     } \
   }`;
   
-  console.log(`boardItem_columnValuesQuery=${ boardItem_columnValuesQuery }`);
-  return boardItem_columnValuesQuery;
+  console.log(`boardItemColumnValuesQuery=${ boardItemColumnValuesQuery }`);
+  return boardItemColumnValuesQuery;
 }
 
 function getCreateOrGetTagMutationQuery(tagName) {
   console.log(`tagName=${ tagName }`);
-  const createOr_getTag_mutationQuery = ` \
+  const createOrGetTagMutationQuery = ` \
     mutation { \
-      createOr_getTag (tagName: \"${ tagName }\") { \
+      createOrGetTag (tagName: \"${ tagName }\") { \
         id \
       } \
     } \
   `;
   
-  console.log(`createOr_getTag_mutationQuery=${ createOr_getTag_mutationQuery }`);
-  return createOr_getTag_mutationQuery;
+  console.log(`createOrGetTagMutationQuery=${ createOrGetTagMutationQuery }`);
+  return createOrGetTagMutationQuery;
 }
 
 function getChangeColumnValueMutationQuery(boardID, itemID, columnID, value) {
   console.log(`boardID=${ boardID }, itemID=${ itemID }, columnID=${ columnID }, value=${ value }`);
-  const changeColumnValueMutation_query = `\
+  const changeColumnValueMutationQuery = `\
     mutation {\
       changeColumnValue (boardID: ${ boardID }, itemID: ${ itemID }, columnID: \"${ columnID }\", value: \"${ value }\") { \
         id \
@@ -98,8 +98,8 @@ function getChangeColumnValueMutationQuery(boardID, itemID, columnID, value) {
     } \
   `;
   
-  console.log(`changeColumnValueMutation_query=${ changeColumnValueMutation_query }`);
-  return changeColumnValueMutation_query;
+  console.log(`changeColumnValueMutationQuery=${ changeColumnValueMutationQuery }`);
+  return changeColumnValueMutationQuery;
 }
 
 module.exports = {

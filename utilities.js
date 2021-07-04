@@ -1,5 +1,8 @@
 const constants = require('./constants');
 
+const lodash = require('lodash');
+
+
 function commitMessageToStep(message) {
   const results = message.toString().match(constants.STEP_REGEX);
   console.log(JSON.stringify(message));
@@ -48,9 +51,9 @@ function generateChangeLog(relevantPullRequestsSet, version, date) {
   var changeLog = "";
 
   changeLog = `${ changeLog }Version ${ version } - date ${ date }\n`;
-
-  for (const relevantPullRequest_string of relevantPullRequestsSet.values()) {
-    const relevantPullRequest = JSON.parse(relevantPullRequest_string).parsedPull_request
+  
+  lodash.forEach(relevantPullRequestsSet.values(), (relevantPullRequestString) => {
+    const relevantPullRequest = JSON.parse(relevantPullRequestString).parsedPullRequest
     console.log(`relevantPullRequest=${ JSON.stringify(relevantPullRequest) }`);
 
     relevantPullRequest.descriptions.forEach(description => {
@@ -62,7 +65,7 @@ function generateChangeLog(relevantPullRequestsSet, version, date) {
     });
 
     changeLog = `${ changeLog }\n`;
-  }
+  });
 
   console.log(`changeLog=${ JSON.stringify(changeLog) }`);
   
@@ -70,8 +73,8 @@ function generateChangeLog(relevantPullRequestsSet, version, date) {
 }
 
 function getFormattedDate() {
-  let dateTime_format = new Intl.DateTimeFormat('en-US');
-  let date = dateTime_format.format();
+  let dateTimeFormat = new Intl.DateTimeFormat('en-US');
+  let date = dateTimeFormat.format();
   console.log(date);
   return date;
 }
@@ -107,35 +110,35 @@ async function updateMonday(relevantPullRequestsSet, version) {
   console.log(`version=${ version }`);
   console.log(`relevantPullRequestsSet=${ JSON.stringify([...relevantPullRequestsSet]) }`);
 
-  for (const relevantPullRequest_string of relevantPullRequestsSet.values()) {
-    const relevantPullRequest = JSON.parse(relevantPullRequest_string).parsedPull_request
+  lodash.forEach(relevantPullRequestsSet.values(), (relevantPullRequestString) => {
+    const relevantPullRequest = JSON.parse(relevantPullRequestString).parsedPullRequest
     console.log(`relevantPullRequest=${ JSON.stringify(relevantPullRequest) }`);
 
     relevantPullRequest.mondays.forEach(monday => {
       console.log(`monday=${ JSON.stringify(monday) }`);
       
-      const parsedMonday_url = new URL(monday);
-      const mondayBoard = parsedMonday_url.searchParams.get("board");
-      const mondayItem = parsedMonday_url.searchParams.get("item");
+      const parsedMondayURL = new URL(monday);
+      const mondayBoard = parsedMondayURL.searchParams.get("board");
+      const mondayItem = parsedMondayURL.searchParams.get("item");
 
       if (mondayBoard != null && mondayItem != null) {
         console.log(`mondayBoard=${ JSON.stringify(mondayBoard) }`);
         console.log(`mondayItem=${ JSON.stringify(mondayItem) }`);
 
-        const BoardItemColumns = mondayApi_wrapper.postBoardItemColumnsQuery(mondayToken, boardID, itemID);
+        const BoardItemColumns = mondayApiWrapper.postBoardItemColumnsQuery(mondayToken, boardID, itemID);
         console.log(`BoardItemColumns=${ JSON.stringify(BoardItemColumns) }`);
         const columnFound = BoardItemColumns.find(column => column.title == columnTitle);
         console.log(`columnFound=${ JSON.stringify(columnFound) }`);
         const columnID = columnFound.id;
-        mondayApi_wrapper.postBoardItemColumnValuesQuery(mondayToken, boardID, itemID, columnID);
-        mondayApi_wrapper.postChangeColumnValueMutationQuery(mondayToken, boardID, itemID, columnID, `\\\"${ version }\\\"`);
-        const columnValue = mondayApi_wrapper.postBoardItemColumnValuesQuery(mondayToken, boardID, itemID, columnID);
+        mondayApiWrapper.postBoardItemColumnValuesQuery(mondayToken, boardID, itemID, columnID);
+        mondayApiWrapper.postChangeColumnValueMutationQuery(mondayToken, boardID, itemID, columnID, `\\\"${ version }\\\"`);
+        const columnValue = mondayApiWrapper.postBoardItemColumnValuesQuery(mondayToken, boardID, itemID, columnID);
         console.log(`columnValue=${ JSON.stringify(columnValue) }`);
         console.log(`columnValue.value=${ columnValue.value }`);
         expect(columnValue.value).toBe(`\"${ version }\"`);
       }
     });
-  }
+  });
 }
 
 module.exports = {

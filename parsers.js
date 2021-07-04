@@ -1,24 +1,27 @@
-const constants = require('./constants')
+const constants = require('./constants');
 
-function parsePullRequestBody(pullRequest_body) {
-  console.log(`pullRequest_body=${ pullRequest_body }`);
+const lodash = require('lodash');
+
+
+function parsePullRequestBody(pullRequestBody) {
+  console.log(`pullRequestBody=${ pullRequestBody }`);
 
   const result = {
     descriptions: [],
     mondays: []
   };
 
-  pullRequest_body = pullRequest_body.replace(constants.COMMENT_REGEX, "");
-  console.log(`pullRequest_body=${ JSON.stringify(pullRequest_body) }`);
+  pullRequestBody = pullRequestBody.replace(constants.COMMENT_REGEX, "");
+  console.log(`pullRequestBody=${ JSON.stringify(pullRequestBody) }`);
 
-  const descriptionLines_afterRegex = constants.PR_DESCRIPTION_LINES_REGEX.exec(pullRequest_body);
+  const descriptionLinesAfterRegex = constants.PR_DESCRIPTION_LINES_REGEX.exec(pullRequestBody);
 
-  if (descriptionLines_afterRegex != null && descriptionLines_afterRegex.length != null) {
-    for (let descriptionLines_index = 0; 
-      descriptionLines_index < descriptionLines_afterRegex.length;
-      descriptionLines_index+=3) {
-      const type = descriptionLines_afterRegex[descriptionLines_index + 1];
-      const description = descriptionLines_afterRegex[descriptionLines_index + 2];
+  if (descriptionLinesAfterRegex != null && descriptionLinesAfterRegex.length != null) {
+    for (let descriptionLinesIndex = 0; 
+      descriptionLinesIndex < descriptionLinesAfterRegex.length;
+      descriptionLinesIndex+=3) {
+      const type = descriptionLinesAfterRegex[descriptionLinesIndex + 1];
+      const description = descriptionLinesAfterRegex[descriptionLinesIndex + 2];
 
       console.log(`type=${ JSON.stringify(type) }`);
       console.log(`description=${ JSON.stringify(description) }`);
@@ -30,13 +33,13 @@ function parsePullRequestBody(pullRequest_body) {
         });
     }
 
-    const mondayLinks = pullRequest_body.match(constants.PR_MONDAY_LINKS_REGEX);
+    const mondayLinks = pullRequestBody.match(constants.PR_MONDAY_LINKS_REGEX);
     console.log(`mondayLinks=${ JSON.stringify(mondayLinks) }`);
     if (mondayLinks!=null) {
-      for (const mondayLink of mondayLinks) {
+      lodash.forEach(mondayLinks, (mondayLink) => {
         console.log(`mondayLink=${ JSON.stringify(mondayLink) }`);
         result.mondays.push(mondayLink);
-      }
+      });
     }
   } else {
     return null;

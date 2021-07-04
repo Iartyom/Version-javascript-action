@@ -9,10 +9,10 @@ const github = require('@actions/github');
 
 
 
-const mondayToken = tokens.mondayToken;
+const mondayToken = tokens.MONDAY_TOKEN;
 const boardID = mondayConstants.TEST_BOARD_ID;
 const itemID = mondayConstants.TEST_ITEM_ID;
-const columnTitle = mondayConstants.TEST_columnTitle;
+const columnTitle = mondayConstants.TEST_COLUMN_TITLE;
 
 console.log(`constants.REPOSITORY=${ constants.REPOSITORY }`);
 
@@ -24,13 +24,13 @@ console.log(`OWNER=${ OWNER }`);
 console.log(`REPO=${ REPO }`);
 
 test('test mondayApiWrapper', async () => {
-  // const firstVersion_tagID = await mondayApiWrapper.postCreateOrGetTagMutationQuery(mondayToken, firstVersion);
+  // const firstVersionTagID = await mondayApiWrapper.postCreateOrGetTagMutationQuery(mondayToken, firstVersion);
   // await mondayApiWrapper.postColumnFieldsQuery(mondayToken, firstVersion);
   // await mondayApiWrapper.postBoardItemsQuery(mondayToken, boardID);
 
   const token = tokens.GITHUB_TOKEN;
   expect(token).toBeDefined();
-  expect(token).not.stringMatching(testConstants.EMPTY_STRING);
+  expect(token).toEqual(expect.not.stringMatching(testConstants.STRING_REGEX_OF_EMPTY_STRING));
   
   const octokit = github.getOctokit(token);
   expect(token).toBeDefined();

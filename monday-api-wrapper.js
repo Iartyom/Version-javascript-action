@@ -13,7 +13,7 @@ async function postBoardItemColumnsQuery(token, boardID, itemID) {
 
   var columnValues = null;
   if (data != null && data != undefined) {
-    columnValues = data.boards[0].items[0].columnValues;
+    columnValues = data.boards[0].items[0].column_values;
   }
   console.log(`columnValues=${ JSON.stringify(columnValues) }`);
   
@@ -113,7 +113,7 @@ async function postCreateOrGetTagMutationQuery(token, tagName) {
 
   var tagID = null;
   if (data != null && data != undefined) {
-    tagID = data.createOr_getTag.id;
+    tagID = data.createOrGetTag.id;
   }
   console.log(`tagID=${ tagID }`);
   

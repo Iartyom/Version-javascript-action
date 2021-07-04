@@ -5,6 +5,7 @@ const utilities = require('./utilities');
 
 const core = require('@actions/core');
 const github = require('@actions/github');
+const lodash = require('lodash');
 
 async function run() {
   core.info(`Starting`);
@@ -62,7 +63,8 @@ async function run() {
     await octokitApiWrapper.createRef(octokit, OWNER, REPO, `refs/tags/${ nextVersion }`, latestBranchCommitSHA);
 
     const afterTags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
-    afterTags.forEach(tag => {
+
+    lodash.forEach(tag => {
       core.info(`tag.name=${ tag.name }`);
     });
   
@@ -86,7 +88,7 @@ async function run() {
 
       const relevantPullRequestsSet = new Set();
     
-      for (const commitFromCompare of compare.commits) {
+      lodash.forEach(compare.commits, async (commitFromCompare) => {
         core.info(`commitFromCompare=${ JSON.stringify(commitFromCompare) }`);
 
         const commitFromCompareSHA = commitFromCompare.sha;
@@ -94,28 +96,27 @@ async function run() {
         const listPullRequestsAssociatedWithCommitFromCompare = await octokitApiWrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commitFromCompareSHA);
         core.info(`listPullRequestsAssociatedWithCommitFromCompare=${ JSON.stringify(listPullRequestsAssociatedWithCommitFromCompare) }`);
 
-        for (const pullRequestsAssociatedWithCommitFromCompare of listPullRequestsAssociatedWithCommitFromCompare) {
-
+        lodash.forEach(listPullRequestsAssociatedWithCommitFromCompare, (pullRequestsAssociatedWithCommitFromCompare) => {
           const pullRequestNumber = pullRequestsAssociatedWithCommitFromCompare.number;
           core.info(`pullRequestNumber=${ JSON.stringify(pullRequestNumber) }`);
 
-          const pullRequest_body = pullRequestsAssociatedWithCommitFromCompare.body;
-          core.info(`pullRequest_body=${ JSON.stringify(pullRequest_body) }`);
+          const pullRequestBody = pullRequestsAssociatedWithCommitFromCompare.body;
+          core.info(`pullRequestBody=${ JSON.stringify(pullRequestBody) }`);
 
-          const parsedPull_requestBody = parsers.parsePullRequestBody(pullRequest_body);
+          const parsedPullRequestBody = parsers.parsePullRequestBody(pullRequestBody);
 
-          if (parsedPull_requestBody != null) {
+          if (parsedPullRequestBody != null) {
             const jsonObject = JSON.stringify({ 
               number: pullRequestNumber,
-              body: pullRequest_body,
-              parsedPull_request: parsedPull_requestBody
+              body: pullRequestBody,
+              parsedPullRequest: parsedPullRequestBody
             });
             core.info(`jsonObject=${ jsonObject }`);
       
             relevantPullRequestsSet.add(jsonObject);
           }
-        }
-      }
+        });
+      });
 
       core.info(`[...relevantPullRequestsSet]=${ JSON.stringify([...relevantPullRequestsSet]) }`);
       core.info(`[...relevantPullRequestsSet.keys()]=${ JSON.stringify([...relevantPullRequestsSet.keys()]) }`);

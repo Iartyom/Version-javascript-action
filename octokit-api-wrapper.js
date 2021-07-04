@@ -1,3 +1,5 @@
+const lodash = require('lodash');
+
 async function createRef(octokit, owner, repo, ref, sha) {
   console.log(`owner=${ owner }, repo=${ repo }, ref=${ ref }, sha=${ sha }`);
   const response = await octokit.rest.git.createRef({
@@ -42,10 +44,10 @@ async function deleteSliceOfTags(octokit, owner, repo, from, to, tags = null) {
     console.log(`tags=${ JSON.stringify(tags) }`);
   }
 
-  for (const tag of tags.slice(from, to)) {
+  lodash.forEach(lodash.slice(from, to), async (tag) => {
     console.log(`tag.name=${ tag.name }`);
     await deleteRef(octokit, owner, repo, `tags/${ tag.name }`);
-  }
+  });
 }
 
 async function deleteTags(octokit, owner, repo, tags = null) {
@@ -57,10 +59,10 @@ async function deleteTags(octokit, owner, repo, tags = null) {
   }
 
   if (tags != null) {
-    for (const tag of tags) {
+    lodash.forEach(tags, async (tag) => {
       console.log(`tag.name=${ tag.name }`);
       await deleteRef(octokit, owner, repo, `tags/${ tag.name }`);
-    }
+    });
   }
 }
 
@@ -129,7 +131,7 @@ async function getPullRequest(octokit, owner, repo, pullNumber) {
 async function getPullsList(octokit, owner, repo) {
   console.log(`owner=${ owner }, repo=${ repo }`);
 
-  var listPull_requests = null;
+  var listPullRequests = null;
   
   const response = await octokit.rest.pulls.list({
     owner,
@@ -139,11 +141,11 @@ async function getPullsList(octokit, owner, repo) {
   console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    listPull_requests = response.data;
+    listPullRequests = response.data;
   }
 
-  console.log(`listPull_requests=${ JSON.stringify(listPull_requests) }`);
-  return listPull_requests;
+  console.log(`listPullRequests=${ JSON.stringify(listPullRequests) }`);
+  return listPullRequests;
 }
 
 async function getTags(octokit, owner, repo) {
@@ -188,7 +190,7 @@ async function listComments(octokit, owner, repo, issueNumber) {
 async function listCommentsForCommit(octokit, owner, repo, commitSHA) {
   console.log(`owner=${ owner }, repo=${ repo }, commitSHA=${ commitSHA }`);
 
-  var listComments_forCommit = null;
+  var listCommentsForCommit = null;
   
   const response = await octokit.rest.repos.listCommentsForCommit({
     owner,
@@ -198,17 +200,17 @@ async function listCommentsForCommit(octokit, owner, repo, commitSHA) {
   console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    listComments_forCommit = response.data;
+    listCommentsForCommit = response.data;
   }
 
-  console.log(`listComments_forCommit=${ JSON.stringify(listComments_forCommit) }`);
-  return listComments_forCommit;
+  console.log(`listCommentsForCommit=${ JSON.stringify(listCommentsForCommit) }`);
+  return listCommentsForCommit;
 }
 
 async function listPullRequestsAssociatedWithCommit(octokit, owner, repo, commitSHA) {
   console.log(`owner=${ owner }, repo=${ repo }, commitSHA=${ commitSHA }`);
 
-  var listPull_requestsAssociated_withCommit = null;
+  var listPullRequestsAssociatedWithCommit = null;
   
   const response = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
     owner,
@@ -218,17 +220,17 @@ async function listPullRequestsAssociatedWithCommit(octokit, owner, repo, commit
   console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    listPull_requestsAssociated_withCommit = response.data;
+    listPullRequestsAssociatedWithCommit = response.data;
   }
 
-  console.log(`listPull_requestsAssociated_withCommit=${ JSON.stringify(listPull_requestsAssociated_withCommit) }`);
-  return listPull_requestsAssociated_withCommit;
+  console.log(`listPullRequestsAssociatedWithCommit=${ JSON.stringify(listPullRequestsAssociatedWithCommit) }`);
+  return listPullRequestsAssociatedWithCommit;
 }
 
 async function listReviewComments(octokit, owner, repo, pullNumber) {
   console.log(`owner=${ owner }, repo=${ repo }, pullNumber=${ pullNumber }`);
 
-  var listReview_comments = null;
+  var listReviewComments = null;
   
   const response = await octokit.rest.pulls.listReviewComments({
     owner,
@@ -238,11 +240,11 @@ async function listReviewComments(octokit, owner, repo, pullNumber) {
   console.log(`response=${ JSON.stringify(response) }`);
 
   if (response.status == 200) {
-    listReview_comments = response.data;
+    listReviewComments = response.data;
   }
 
-  console.log(`listReview_comments=${ JSON.stringify(listReview_comments) }`);
-  return listReview_comments;
+  console.log(`listReviewComments=${ JSON.stringify(listReviewComments) }`);
+  return listReviewComments;
 }
 
 async function listReviews(octokit, owner, repo, pullNumber) {

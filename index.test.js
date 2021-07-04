@@ -5,6 +5,7 @@ const parsers = require('./parsers');
 const utilities = require('./utilities');
 
 const github = require('@actions/github');
+const lodash = require('lodash');
 
 
 console.log(`constants.REPOSITORY=${ constants.REPOSITORY }`);
@@ -69,8 +70,8 @@ test('test getOctokit', async () => {
   await octokitApiWrapper.createRef(octokit, OWNER, REPO, `refs/tags/${ nextVersion }`, latestBranchCommitSHA);
 
   const afterTags = await octokitApiWrapper.getTags(octokit, OWNER, REPO);
-  afterTags.forEach(tag => {
-    console.log(`tag.name=${ tag.name }`);
+  lodash.forEach(tag => {
+    core.info(`tag.name=${ tag.name }`);
   });
 
   const filteredAfterTags = afterTags.filter(tag => {
@@ -120,17 +121,16 @@ test('test pull request parser', async () => {
     console.log(`compare=${ JSON.stringify(compare) }`);
 
     const relevantPullRequestsSet = new Set();
-  
-    for (const commitFromCompare of compare.commits) {
+    
+    lodash.forEach(compare.commits, (commitFromCompare) => {
       console.log(`commitFromCompare=${ JSON.stringify(commitFromCompare) }`);
 
       const commitFromCompareSHA = commitFromCompare.sha;
 
-      const listPullRequestsAssociatedWithCommitFromCompare = await octokitApiWrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commitFromCompareSHA);
+      const listPullRequestsAssociatedWithCommitFromCompare = octokitApiWrapper.listPullRequestsAssociatedWithCommit(octokit, OWNER, REPO, commitFromCompareSHA);
       console.log(`listPullRequestsAssociatedWithCommitFromCompare=${ JSON.stringify(listPullRequestsAssociatedWithCommitFromCompare) }`);
 
-      for (const pullRequestsAssociatedWithCommitFromCompare of listPullRequestsAssociatedWithCommitFromCompare) {
-
+      lodash.forEach(listPullRequestsAssociatedWithCommitFromCompare, (pullRequestsAssociatedWithCommitFromCompare) => {
         const pullRequestNumber = pullRequestsAssociatedWithCommitFromCompare.number;
         console.log(`pullRequestNumber=${ JSON.stringify(pullRequestNumber) }`);
 
@@ -149,8 +149,8 @@ test('test pull request parser', async () => {
     
           relevantPullRequestsSet.add(jsonObject);
         }
-      }
-    }
+      });
+    });
 
     console.log(`[...relevantPullRequestsSet]=${ JSON.stringify([...relevantPullRequestsSet]) }`);
     console.log(`[...relevantPullRequestsSet.keys()]=${ JSON.stringify([...relevantPullRequestsSet.keys()]) }`);

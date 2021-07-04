@@ -14,7 +14,8 @@ const BRANCH = 'master';
 
 const REPOSITORY="Explium/tests"
 
-module.exports = { INIT_VERSION,
+module.exports = {
+  INIT_VERSION,
   FIRST_VERSION,
   VERSION_REGEX,
   STEP_REGEX,
